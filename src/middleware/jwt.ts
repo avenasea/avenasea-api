@@ -1,39 +1,32 @@
-import { Context, Status } from "https://deno.land/x/oak/mod.ts";
-import { validateJwt } from "https://deno.land/x/djwt@2.2/create.ts";
+import type { RouterContext } from "https://deno.land/x/oak/mod.ts";
+import { verify } from "https://deno.land/x/djwt/mod.ts";
 
-export const JwtConfig = {
-  header: "Authorization",
-  schema: "Bearer",
-  // use Env variable
-  secretKey: Deno.env.get("SECRET") || "",
-  expirationTime: 60000,
-  type: "JWT",
-  alg: "HS256",
+
+export const validateJWT = async (
+  { request, response }: RouterContext,
+  next: VoidFunction
+) => {
+  const auth = await request.headers.Authorization;
+  const jwt = auth.replace(/Bearer /, '');
+
+  try {
+    if (!jwt) {
+      throw { error: "Missing JWT Token 😨" };
+    }
+
+    await verify(jwt, key)
+      .then(async () => {
+        console.log("Valid JWT Token! 😎");
+        await next(); // The next() will continue with the excecution
+      })
+      .catch((e) => {
+        console.log(e);
+        response.body = { error: e.toString() };
+        response.status = 401;
+      });
+  } catch (error) {
+    console.error(error);
+    response.body = error;
+    response.status = 500;
+  }
 };
-
-export async function jwtAuth(
-  ctx: Context<Record<string, any>>,
-  next: () => Promise<void>,
-) {
-  // Get the token from the request
-  const token = ctx.request.headers
-    .get(JwtConfig.header)
-    ?.replace(`${JwtConfig.schema} `, "");
-
-  // reject request if token was not provide
-  if (!token) {
-    ctx.response.status = Status.Unauthorized;
-    ctx.response.body = { message: "Unauthorized" };
-    return;
-  }
-
-  // check the validity of the token
-  if (!(await validateJwt(token, JwtConfig.secretKey, { isThrowing: false }))) {
-    ctx.response.status = Status.Unauthorized;
-    ctx.response.body = { message: "Wrong Token" };
-    return;
-  }
-
-  // JWT is correct, so continue and call the private route
-  next();
-}

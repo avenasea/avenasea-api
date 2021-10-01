@@ -5,11 +5,10 @@ import {
 } from "https://raw.githubusercontent.com/stillalivx/denodb/master/mod.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
 import {
-  Jose,
-  makeJwt,
-  Payload,
-  setExpiration,
-} from "https://deno.land/x/djwt@2.2/create.ts";
+  create,
+  getNumericDate,
+  verify,
+} from "https://deno.land/x/djwt/mod.ts";
 import { JwtConfig } from "../middleware/jwt.ts";
 import { db } from "../db.ts";
 
@@ -44,16 +43,10 @@ class Users extends Model {
   static generateJwt(id: string) {
     // Create the payload with the expiration date (token have an expiry date) and the id of current user (you can add that you want)
     const payload: Payload = {
-      id,
-      exp: setExpiration(new Date().getTime() + JwtConfig.expirationTime),
+      id
     };
-    const header: Jose = {
-      alg: JwtConfig.alg as Jose["alg"],
-      typ: JwtConfig.type,
-    };
-
     // return the generated token
-    return makeJwt({ header, payload, key: JwtConfig.secretKey });
+    return create({ payload, key: JwtConfig.secretKey });
   }
 }
 
