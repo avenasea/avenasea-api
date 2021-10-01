@@ -9,5 +9,5 @@
       "cmd": "deno compile --allow-all --unstable --output ./api index.ts",
       "desc": "compile api server"
     }
-   }
+  }
 }
