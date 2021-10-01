@@ -4,6 +4,10 @@
     "start": {
       "cmd": "deno run --allow-all --unstable index.ts",
       "desc": "run api server"
+    },
+    "compile": {
+      "cmd": "deno compile --allow-all --unstable --output ./api index.ts",
+      "desc": "compile api server"
     }
-  }
+   }
 }
