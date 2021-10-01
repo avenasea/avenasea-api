@@ -1,0 +1,16 @@
+[Unit]
+Description=Grazily api
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ubuntu
+WorkingDirectory=/home/ubuntu/www/grazily.com/grazily-api/
+ExecStart=/home/ubuntu/www/grazily.com/grazily-api/api
+StandardOutput=file:/var/log/grazily-api.log
+
+[Install]
+WantedBy=multi-user.target
