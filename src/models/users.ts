@@ -43,7 +43,7 @@ class Users extends Model {
   static generateJwt(id: string) {
     // Create the payload with the expiration date (token have an expiry date) and the id of current user (you can add that you want)
     const payload: Payload = {
-      id
+      id,
     };
     // return the generated token
     return create({ payload, key: JwtConfig.secretKey });

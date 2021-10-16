@@ -1,13 +1,17 @@
 import type { RouterContext } from "https://deno.land/x/oak/mod.ts";
 import { verify } from "https://deno.land/x/djwt/mod.ts";
 
-
 export const validateJWT = async (
   { request, response }: RouterContext,
-  next: VoidFunction
+  next: VoidFunction,
 ) => {
-  const auth = await request.headers.Authorization;
-  const jwt = auth.replace(/Bearer /, '');
+  const auth = request.headers.get('Authorization');
+  const matches = /Bearer\s*(.*)/.exec(auth);
+	let jwt;
+
+	if (matches.length > 1) {
+		jwt = matches[1];
+	}
 
   try {
     if (!jwt) {
