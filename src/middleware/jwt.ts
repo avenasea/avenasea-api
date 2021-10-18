@@ -5,13 +5,13 @@ export const validateJWT = async (
   { request, response }: RouterContext,
   next: VoidFunction,
 ) => {
-  const auth = request.headers.get('Authorization');
+  const auth = request.headers.get("Authorization");
   const matches = /Bearer\s*(.*)/.exec(auth);
-	let jwt;
+  let jwt;
 
-	if (matches.length > 1) {
-		jwt = matches[1];
-	}
+  if (matches.length > 1) {
+    jwt = matches[1];
+  }
 
   try {
     if (!jwt) {

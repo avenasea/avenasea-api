@@ -1,4 +1,5 @@
 database.sqlite
 .env.local
 .env
+*.key
 api
