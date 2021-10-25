@@ -42,11 +42,12 @@ class Users extends Model {
 
   static generateJwt(id: string) {
     // Create the payload with the expiration date (token have an expiry date) and the id of current user (you can add that you want)
-    const payload: Payload = {
+    const payload = {
       id,
+      iat: getNumericDate(new Date()),
     };
     // return the generated token
-    return create({ payload, key: JwtConfig.secretKey });
+    return create({ alg: "HS512", typ: "JWT" }, payload, JwtConfig.secretKey);
   }
 }
 
