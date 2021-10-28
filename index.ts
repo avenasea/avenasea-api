@@ -6,7 +6,6 @@ import index from "./src/routes/index.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 //import "https://deno.land/x/dotenv/load.ts";
 
-
 config({ export: true });
 //console.log(config());
 const env = Deno.env.toObject();

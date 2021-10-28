@@ -8,7 +8,7 @@ const key = await crypto.subtle.importKey(
   JSON.parse(keyData),
   { name: "HMAC", hash: "SHA-512" },
   true,
-  ["sign", "verify"]
+  ["sign", "verify"],
 );
 
 export const JwtConfig = {
@@ -17,7 +17,7 @@ export const JwtConfig = {
 
 export const validateJWT = async (
   { request, response, state }: RouterContext,
-  next: VoidFunction
+  next: VoidFunction,
 ) => {
   const auth = request.headers.get("Authorization");
   if (!auth) return;

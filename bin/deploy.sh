@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 #cp ./.env.local ./.env
+. .env.defaults
 . .env
 . $HOME/.bashrc
 

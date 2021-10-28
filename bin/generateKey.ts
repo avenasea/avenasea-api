@@ -3,7 +3,7 @@
 const key = await crypto.subtle.generateKey(
   { name: "HMAC", hash: "SHA-512" },
   true,
-  ["sign", "verify"]
+  ["sign", "verify"],
 );
 
 const result = await crypto.subtle.exportKey("jwk", key);
