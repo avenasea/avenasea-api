@@ -4,8 +4,13 @@ import subscriptions from "./src/routes/subscriptions.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
+//import "https://deno.land/x/dotenv/load.ts";
 
-config();
+
+config({ export: true });
+//console.log(config());
+const env = Deno.env.toObject();
+const port = parseInt(env.PORT);
 const app = new Application();
 
 // Logger
@@ -31,4 +36,5 @@ app.use(users.allowedMethods());
 app.use(index.routes());
 app.use(index.allowedMethods());
 
-await app.listen({ port: 8051 });
+console.log(`Listening on http://localhost:${port}/api/1`);
+await app.listen({ port });

@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 . $HOME/.bashrc
 #cp ./.env.local ./.env
 . ./.env
+. ./.env.local
 
 host=$HOST_DOMAIN
 name=$HOST_PATH
