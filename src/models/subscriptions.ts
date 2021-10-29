@@ -1,8 +1,5 @@
 // import { Model, DataTypes } from "https://deno.land/x/denodb/mod.ts";
-import {
-  DataTypes,
-  Model,
-} from "https://deno.land/x/denodb/mod.ts";
+import { DataTypes, Model } from "https://deno.land/x/denodb/mod.ts";
 import { db } from "../db.ts";
 
 class Subscriptions extends Model {

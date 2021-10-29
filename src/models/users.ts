@@ -1,8 +1,5 @@
 // import { Model, DataTypes } from "https://deno.land/x/denodb/mod.ts";
-import {
-  DataTypes,
-  Model,
-} from "https://deno.land/x/denodb/mod.ts";
+import { DataTypes, Model } from "https://deno.land/x/denodb/mod.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
 import {
   create,
