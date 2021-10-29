@@ -2,7 +2,7 @@
 import {
   DataTypes,
   Model,
-} from "https://raw.githubusercontent.com/stillalivx/denodb/master/mod.ts";
+} from "https://deno.land/x/denodb/mod.ts";
 import { db } from "../db.ts";
 
 class Subscriptions extends Model {

@@ -2,7 +2,7 @@
 import {
   DataTypes,
   Model,
-} from "https://raw.githubusercontent.com/stillalivx/denodb/master/mod.ts";
+} from "https://deno.land/x/denodb/mod.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
 import {
   create,
@@ -51,7 +51,7 @@ class Users extends Model {
   }
 }
 
-db.link([Users]);
+//db.link([Users]);
 //await db.sync();
 
 export default Users;
