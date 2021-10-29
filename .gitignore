@@ -2,5 +2,5 @@ database.sqlite
 .env.local
 .env
 *.key
-api
+./api
 jwk.json
