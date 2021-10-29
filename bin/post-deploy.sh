@@ -19,6 +19,6 @@ cd $HOME/www/${name}/${project}
 #v app.v
 
 #go build ./src/main.go
-deno compile --allow-all --unstable --no-check --output ./api ./index.ts 
+deno compile --allow-all --unstable --no-check -r --output ./api ./index.ts 
 
 echo $HOST_PASS | sudo -S systemctl restart ${META_SERVICE}
