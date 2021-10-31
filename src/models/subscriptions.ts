@@ -21,7 +21,7 @@ class Subscriptions extends Model {
   };
 }
 
-db.link([Subscriptions]);
+//db.link([Subscriptions]);
 // await db.sync();
 
 export default Subscriptions;

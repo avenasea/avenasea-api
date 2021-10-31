@@ -48,7 +48,7 @@ class Users extends Model {
   }
 }
 
-db.link([Users]);
-await db.sync();
+//db.link([Users]);
+//await db.sync();
 
 export default Users;
