@@ -1,3 +1,4 @@
+// foo
 import { DataTypes, Model } from "https://deno.land/x/denodb/mod.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
 import {
@@ -48,6 +49,6 @@ class Users extends Model {
 }
 
 db.link([Users]);
-//await db.sync();
+await db.sync();
 
 export default Users;

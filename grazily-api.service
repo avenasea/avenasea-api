@@ -9,7 +9,7 @@ Restart=always
 RestartSec=1
 User=ubuntu
 WorkingDirectory=/home/ubuntu/www/grazily.com/grazily-api/
-ExecStart=/home/ubuntu/www/grazily.com/grazily-api/api
+ExecStart=/home/ubuntu/www/grazily.com/grazily-api/bin/start.sh
 StandardOutput=file:/var/log/grazily-api.log
 
 [Install]

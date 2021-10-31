@@ -10,7 +10,7 @@ export default class extends AbstractMigration<ClientSQLite> {
     await this.client.query(`CREATE TABLE users (
 				id string primary key,
 				email string unique,
-				hashedPassword string
+				hashed_password string
 			)`);
   }
 
