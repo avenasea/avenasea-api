@@ -4,10 +4,10 @@
 
 ## dev
 
-		# run migrations
-		deno run -A --unstable https://deno.land/x/nessie/cli.ts migrate
+    # run migrations
+    	deno run -A --unstable https://deno.land/x/nessie/cli.ts migrate
 
-		# start server
+    	# start server
     deno run --allow-all --unstable index.ts
 
 ## compile

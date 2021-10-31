@@ -1,11 +1,13 @@
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
 import Users from "../models/users.ts";
-import { db } from '../db.ts';
+import { db } from "../db.ts";
 
 class Controller {
   async register(context: any) {
     const body = JSON.parse(await context.request.body().value);
-    const existing = await db.query("SELECT * FROM users WHERE email = ?", [body.email]);
+    const existing = await db.query("SELECT * FROM users WHERE email = ?", [
+      body.email,
+    ]);
 
     if (existing.length) {
       context.response.status = 400;
@@ -13,20 +15,26 @@ class Controller {
     }
 
     const hashedPassword = await Users.hashPassword(body.password);
-		console.log(hashedPassword);
-    const user = await db.query('INSERT INTO users (email, hashed_password) VALUES (?,?)',[
-      body.email,
-      hashedPassword,
-    ]);
+    console.log(hashedPassword);
+    const user = await db.query(
+      "INSERT INTO users (email, hashed_password) VALUES (?,?)",
+      [
+        body.email,
+        hashedPassword,
+      ],
+    );
 
-		console.log('user created: ', user);
+    console.log("user created: ", user);
     context.response.body = { message: "User created" };
   }
 
   async login(context: any) {
     const body = JSON.parse(await context.request.body().value);
-		// todo need to figure out how to get key/value
-    let user: any = await db.query('SELECT id, email, hashed_password FROM users WHERE email = ?', [body.email]);
+    // todo need to figure out how to get key/value
+    let user: any = await db.query(
+      "SELECT id, email, hashed_password FROM users WHERE email = ?",
+      [body.email],
+    );
 
     if (!user || !user.length) {
       context.response.status = 400;
@@ -34,10 +42,10 @@ class Controller {
       return;
     }
     user = user[0];
-		console.log(user);
-		console.log(body.password, user[2]);
+    console.log(user);
+    console.log(body.password, user[2]);
     const comparison = await bcrypt.compare(body.password, user[2]);
-		console.log('comparison: ', comparison);
+    console.log("comparison: ", comparison);
 
     if (comparison) {
       context.response.status = 200;
