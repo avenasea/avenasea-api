@@ -41,10 +41,12 @@ class Controller {
 
   async delete(context: any) {
     const id = context.params.id;
-    const res = await db.query("DELETE FROM searches WHERE id = ?", [id]);
+    
+    await db.query("DELETE FROM searches WHERE id = ?", [id]);
+    await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
+    await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
 
     context.response.status = 204;
-    context.response.body = { message: "Deleted" };
   }
 
   async getAll(context: any) {
