@@ -16,11 +16,11 @@ class Controller {
 
     const hashedPassword = await Users.hashPassword(body.password);
     console.log(hashedPassword);
-		console.log(Users.getCurrentTime());
+    console.log(Users.getCurrentTime());
     const user = await db.query(
       "INSERT INTO users (id, email, hashed_password, created_at, updated_at) VALUES (?, ?,?,?,?)",
       [
-				Users.getRandomId(),
+        Users.getRandomId(),
         body.email,
         hashedPassword,
         Users.getCurrentTime(),
@@ -55,8 +55,11 @@ class Controller {
       context.response.status = 200;
       //delete user.hashed_password;
       const token = await Users.generateJwt(user.id);
-      await db.query('UPDATE users SET updated_at = ? WHERE email = ?', [Users.getCurrentTime(), user[1]])
-      
+      await db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
+        Users.getCurrentTime(),
+        user[1],
+      ]);
+
       return (context.response.body = {
         user,
         token,

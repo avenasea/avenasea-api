@@ -1,14 +1,11 @@
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
-import {
-  create,
-  getNumericDate,
-} from "https://deno.land/x/djwt/mod.ts";
+import { create, getNumericDate } from "https://deno.land/x/djwt/mod.ts";
 import { JwtConfig } from "../middleware/jwt.ts";
 
-class Users  {
+class Users {
   static getRandomId() {
     return crypto.randomUUID();
-  };
+  }
 
   static getCurrentTime() {
     return new Date().toISOString();
