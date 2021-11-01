@@ -2,7 +2,7 @@ import {
   AbstractMigration,
   ClientSQLite,
   Info,
-} from "https://deno.land/x/nessie@2.0.1/mod.ts";
+} from "https://deno.land/x/nessie@2.0.2/mod.ts";
 
 export default class extends AbstractMigration<ClientSQLite> {
   /** Runs on migrate */
