@@ -35,20 +35,24 @@ class Controller {
     let user: any;
 
     try {
-      const query = db.prepareQuery<string>("SELECT id, email, hashed_password FROM users WHERE email = :email",
-     );
+      const query = db.prepareQuery<string>(
+        "SELECT id, email, hashed_password FROM users WHERE email = :email",
+      );
       user = query.oneEntry({ email: body.email });
       query.finalize();
-    } catch(err) {
+    } catch (err) {
       console.error(err);
       context.response.status = 400;
       context.response.body = { message: "User not found" };
       return;
     }
 
-    console.log('user: ', user);
+    console.log("user: ", user);
     console.log(body.password, user.hashed_password);
-    const comparison = await bcrypt.compare(body.password, user.hashed_password);
+    const comparison = await bcrypt.compare(
+      body.password,
+      user.hashed_password,
+    );
 
     if (comparison) {
       context.response.status = 200;

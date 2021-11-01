@@ -1,6 +1,6 @@
 import { Application, Router } from "https://deno.land/x/oak/mod.ts";
 import { oakCors } from "https://deno.land/x/cors/mod.ts";
-import subscriptions from "./src/routes/subscriptions.ts";
+import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
@@ -28,8 +28,8 @@ app.use(async (ctx, next) => {
 });
 
 app.use(oakCors());
-app.use(subscriptions.routes());
-app.use(subscriptions.allowedMethods());
+app.use(searches.routes());
+app.use(searches.allowedMethods());
 app.use(users.routes());
 app.use(users.allowedMethods());
 app.use(index.routes());
