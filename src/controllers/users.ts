@@ -15,10 +15,9 @@ class Controller {
     }
 
     const hashedPassword = await Users.hashPassword(body.password);
-    console.log(hashedPassword);
     console.log(Users.getCurrentTime());
     const user = await db.query(
-      "INSERT INTO users (id, email, hashed_password, created_at, updated_at) VALUES (?, ?,?,?,?)",
+      "INSERT INTO users (id, email, hashed_password, created_at, updated_at) VALUES (?,?,?,?,?)",
       [
         Users.getRandomId(),
         body.email,
@@ -28,36 +27,38 @@ class Controller {
       ],
     );
 
-    console.log("user created: ", user);
     context.response.body = { message: "User created" };
   }
 
   async login(context: any) {
     const body = JSON.parse(await context.request.body().value);
-    // todo need to figure out how to get key/value
-    let user: any = await db.query(
-      "SELECT id, email, hashed_password FROM users WHERE email = ?",
-      [body.email],
-    );
+    let user: any;
 
-    if (!user || !user.length) {
+    try {
+      const query = db.prepareQuery<string>("SELECT id, email, hashed_password FROM users WHERE email = :email",
+     );
+      user = query.oneEntry({ email: body.email });
+      query.finalize();
+    } catch(err) {
+      console.error(err);
       context.response.status = 400;
       context.response.body = { message: "User not found" };
       return;
     }
-    user = user[0];
-    console.log(user);
-    console.log(body.password, user[2]);
-    const comparison = await bcrypt.compare(body.password, user[2]);
-    console.log("comparison: ", comparison);
+
+    console.log('user: ', user);
+    console.log(body.password, user.hashed_password);
+    const comparison = await bcrypt.compare(body.password, user.hashed_password);
 
     if (comparison) {
       context.response.status = 200;
       //delete user.hashed_password;
       const token = await Users.generateJwt(user.id);
+      delete user.hashed_password;
+
       await db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
         Users.getCurrentTime(),
-        user[1],
+        user.email,
       ]);
 
       return (context.response.body = {
