@@ -15,7 +15,6 @@ class Controller {
     }
 
     const hashedPassword = await Users.hashPassword(body.password);
-    console.log(Users.getCurrentTime());
     const user = await db.query(
       "INSERT INTO users (id, email, hashed_password, created_at, updated_at) VALUES (?,?,?,?,?)",
       [
@@ -27,6 +26,7 @@ class Controller {
       ],
     );
 
+		console.log('user registered! ', body.email, Users.getCurrentTime());
     context.response.body = { message: "User created" };
   }
 
@@ -47,8 +47,7 @@ class Controller {
       return;
     }
 
-    console.log("user: ", user);
-    console.log(body.password, user.hashed_password);
+    console.log("user login: ", user.email);
     const comparison = await bcrypt.compare(
       body.password,
       user.hashed_password,
