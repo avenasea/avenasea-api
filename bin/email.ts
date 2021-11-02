@@ -98,29 +98,38 @@ async function sendEmail(email: string, txt: string, htm: string) {
   return await res.json();
 }
 
-const users = await db.queryEntries('SELECT * FROM users');
+const users = await db.queryEntries("SELECT * FROM users");
 console.log(users);
 
 for (const user of users) {
   // todo: check for if account active or paid
-  const searches = await db.queryEntries('SELECT * from searches WHERE user_id = ?', [user.id]);
-  
-  for (const search of searches) {
-    const positive = await db.queryEntries('SELECT * from positive WHERE search_id = ?', [search.id]);
-    const negative = await db.queryEntries('SELECT * from negative WHERE search_id = ?', [search.id]);
-  
-    for (const site of sites) {
-        const neg = negative.map((n) => " -" + n.word).join("");
-        const pos = positive.map((p) => " " + p.word).join("");
-        const q = `${site}${neg}${pos}`;
-        const { txt, htm } = await getSerps(q);
-        console.log(user.email, search.name, q);
+  const searches = await db.queryEntries(
+    "SELECT * from searches WHERE user_id = ?",
+    [user.id],
+  );
 
-        text += txt;
-        html += htm;
+  for (const search of searches) {
+    const positive = await db.queryEntries(
+      "SELECT * from positive WHERE search_id = ?",
+      [search.id],
+    );
+    const negative = await db.queryEntries(
+      "SELECT * from negative WHERE search_id = ?",
+      [search.id],
+    );
+
+    for (const site of sites) {
+      const neg = negative.map((n) => " -" + n.word).join("");
+      const pos = positive.map((p) => " " + p.word).join("");
+      const q = `${site}${neg}${pos}`;
+      const { txt, htm } = await getSerps(q);
+      console.log(user.email, search.name, q);
+
+      text += txt;
+      html += htm;
     }
 
-		 await sendEmail(user.email, text, html);
+    await sendEmail(user.email, text, html);
   }
 }
 
