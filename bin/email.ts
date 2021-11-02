@@ -127,7 +127,7 @@ for (const user of users) {
       const neg = negative.map((n) => " -" + n.word).join("");
       const pos = positive.map((p) => " " + p.word).join("");
 
-			if (!pos.length) continue;
+      if (!pos.length) continue;
 
       const q = `${site}${neg}${pos}`;
       const { txt, htm } = await getSerps(q);
