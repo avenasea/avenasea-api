@@ -3,7 +3,7 @@ import { oakCors } from "https://deno.land/x/cors/mod.ts";
 import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
-import stats from './src/routes/stats.ts';
+import stats from "./src/routes/stats.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 //import "https://deno.land/x/dotenv/load.ts";
 

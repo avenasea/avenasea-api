@@ -26,7 +26,7 @@ class Controller {
       ],
     );
 
-		console.log('user registered! ', body.email, Users.getCurrentTime());
+    console.log("user registered! ", body.email, Users.getCurrentTime());
     context.response.body = { message: "User created" };
   }
 
