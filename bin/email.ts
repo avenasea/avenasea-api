@@ -71,7 +71,12 @@ ${title}
   return { txt, htm };
 }
 
-async function sendEmail(email: string, name: string, txt: string, htm: string) {
+async function sendEmail(
+  email: string,
+  name: string,
+  txt: string,
+  htm: string,
+) {
   const auth = btoa(`api:${ENV.MAILGUN_API_KEY}`);
   const form = new FormData();
   form.append("from", `Grazily ${ENV.META_EMAIL}`);
