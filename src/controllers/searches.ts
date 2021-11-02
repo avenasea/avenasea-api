@@ -69,15 +69,20 @@ class Controller {
 
     data = data.pop();
 
-    const positive = await db.queryEntries('SELECT word FROM positive WHERE search_id = ?', [search_id]);
+    const positive = await db.queryEntries(
+      "SELECT word FROM positive WHERE search_id = ?",
+      [search_id],
+    );
 
-    const negative = await db.queryEntries('SELECT word FROM negative WHERE search_id = ?', [search_id]);
+    const negative = await db.queryEntries(
+      "SELECT word FROM negative WHERE search_id = ?",
+      [search_id],
+    );
 
-    data.positive = positive.map(w => w.word);
-    data.negative = negative.map(w => w.word);
+    data.positive = positive.map((w) => w.word);
+    data.negative = negative.map((w) => w.word);
     context.response.body = data;
   }
-
 
   async update(context: any) {
     const id = context.state.user.id;
@@ -93,7 +98,7 @@ class Controller {
     );
 
     // add positive keywords
-    await db.query('DELETE from positive WHERE search_id = ?', [search_id]);
+    await db.query("DELETE from positive WHERE search_id = ?", [search_id]);
 
     for (let word of positive) {
       await db.query(
@@ -103,7 +108,7 @@ class Controller {
     }
 
     // add negative keywords
-    await db.query('DELETE from negative WHERE search_id = ?', [search_id]);
+    await db.query("DELETE from negative WHERE search_id = ?", [search_id]);
 
     for (let word of negative) {
       await db.query(
@@ -119,9 +124,6 @@ class Controller {
     context.response.status = 201;
     context.response.body = data;
   }
-
-
-
 }
 
 export default new Controller();
