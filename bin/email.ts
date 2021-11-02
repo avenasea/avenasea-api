@@ -35,7 +35,7 @@ async function getSerps(q: string): Promise<any> {
   // return { txt, htm };
 
   const res = await fetch(
-    `https://api.scaleserp.com/search?api_key=74BEEFF70A2645618A2BB3845408B96A&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
+    `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
   );
   const data = await res.json();
 
@@ -71,17 +71,17 @@ ${title}
   return { txt, htm };
 }
 
-async function sendEmail(email: string, txt: string, htm: string) {
+async function sendEmail(email: string, name: string, txt: string, htm: string) {
   const auth = btoa(`api:${ENV.MAILGUN_API_KEY}`);
   const form = new FormData();
   form.append("from", `Grazily ${ENV.META_EMAIL}`);
   form.append("to", email);
-  form.append("subject", `remote jobs`);
+  form.append("subject", `remote jobs: ${name}`);
   form.append("text", txt);
   form.append("html", `<html>${htm}</html>`);
 
   const res = await fetch(
-    "https://api.mailgun.net/v3/mg.grazily.com/messages",
+    `https://api.mailgun.net/v3/${ENV.MAILGUN_DOMAIN}/messages`,
     {
       method: "POST",
       headers: {
@@ -129,7 +129,7 @@ for (const user of users) {
       html += htm;
     }
 
-    await sendEmail(user.email, text, html);
+    await sendEmail(user.email, search.name, text, html);
   }
 }
 
