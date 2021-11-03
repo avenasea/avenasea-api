@@ -8,7 +8,7 @@ class Controller {
     const totalSearches = await db.queryEntries(
       "SELECT count(*) as total from searches",
     );
-    console.log("total: ", totalUsers, " searches: ", totalSearches);
+
     context.response.status = 200;
     context.response.body = {
       users: totalUsers.pop().total,
