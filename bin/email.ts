@@ -46,13 +46,13 @@ async function getSerps(q: string): Promise<any> {
   );
 
   htm += `
-	<h4><a href="https://google.com/search?q=${q}" target="_new">${host} - ${query}</a></h4>
+	<h4><a href="https://google.com/search?q=${q}" target="_new" title="${query}">${host}</a></h4>
 	<ol>
 `;
 
   txt += `
 ==========================
-${host} - ${query}
+${host}
 ==========================`;
 
   data.organic_results.map((item: any) => {
