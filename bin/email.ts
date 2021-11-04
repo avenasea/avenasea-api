@@ -11,7 +11,7 @@ const sites = [
   "inurl:greenhouse.io",
   "inurl:jobvite.com",
   "inurl:recruiterbox.com",
-  "angel.co/company+inurl:/jobs",
+  "inurl:angel.co/company+inurl:/jobs",
   "inurl:linkedin.com/jobs/view/",
   "inurl:nodesk.co/remote-jobs",
   "inurl:recruitee.com/o",
@@ -31,7 +31,7 @@ const sites = [
 async function getSerps(q: string): Promise<any> {
   let txt: string = "";
   let htm: string = "";
-  // return { txt, htm };
+  
 
   const res = await fetch(
     `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
@@ -42,14 +42,16 @@ async function getSerps(q: string): Promise<any> {
 
   if (!data.organic_results?.length) return { txt, htm };
 
+  const [orig, host, skip, query] = q.match(/^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/);
+
   htm += `
-	<h1><a href="https://google.com/search?q=${q}" target="_new">${q}</a></h1>
+	<h4><a href="https://google.com/search?q=${q}" target="_new">${host} - ${query}</a></h4>
 	<ol>
 `;
 
   txt += `
 ==========================
-${q}
+${host} - ${query}
 ==========================`;
 
   data.organic_results.map((item: any) => {
@@ -107,7 +109,7 @@ console.log(users);
 
 for (const user of users) {
   // todo: check for if account active or paid
-  
+
   if (args.email && user.email !== args.email) continue;
 
   const searches = await db.queryEntries(
