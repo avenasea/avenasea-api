@@ -46,7 +46,7 @@ async function getSerps(q: string): Promise<any> {
   );
 
   htm += `
-	<h4><a href="https://google.com/search?q=${q}" target="_new" title="${query}">${host}</a></h4>
+	<h4 title="${query}">${host}</h4>
 	<ol>
 `;
 
@@ -139,6 +139,7 @@ for (const user of users) {
 
       const q = `${site}${neg}${pos}`;
       const { txt, htm } = await getSerps(q);
+      if (!htm || !txt) continue;
       console.log(user.email, search.name, q);
 
       text += txt;
