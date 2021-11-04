@@ -1,7 +1,9 @@
+import { parse } from "https://deno.land/std/flags/mod.ts";
 import { config } from "https://deno.land/x/dotenv/mod.ts";
 import { db } from "../src/db.ts";
 
 const ENV = config();
+const args = parse(Deno.args);
 
 const sites = [
   "inurl:lever.co",
@@ -105,6 +107,9 @@ console.log(users);
 
 for (const user of users) {
   // todo: check for if account active or paid
+  
+  if (args.email && user.email !== args.email) continue;
+
   const searches = await db.queryEntries(
     "SELECT * from searches WHERE user_id = ?",
     [user.id],
