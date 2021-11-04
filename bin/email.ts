@@ -31,7 +31,6 @@ const sites = [
 async function getSerps(q: string): Promise<any> {
   let txt: string = "";
   let htm: string = "";
-  
 
   const res = await fetch(
     `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
@@ -42,7 +41,9 @@ async function getSerps(q: string): Promise<any> {
 
   if (!data.organic_results?.length) return { txt, htm };
 
-  const [orig, host, skip, query] = q.match(/^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/);
+  const [orig, host, skip, query] = q.match(
+    /^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/,
+  );
 
   htm += `
 	<h4><a href="https://google.com/search?q=${q}" target="_new">${host} - ${query}</a></h4>
