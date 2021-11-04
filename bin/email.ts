@@ -3,9 +3,6 @@ import { db } from "../src/db.ts";
 
 const ENV = config();
 
-let text: string = "";
-let html: string = "";
-
 const sites = [
   "inurl:lever.co",
   "inurl:workable.com",
@@ -114,6 +111,9 @@ for (const user of users) {
   );
 
   for (const search of searches) {
+    let text: string = "";
+    let html: string = "";
+
     const positive = await db.queryEntries(
       "SELECT * from positive WHERE search_id = ?",
       [search.id],
