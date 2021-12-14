@@ -495,4 +495,3 @@ accra
 kenya
 casablanca
 tunis`.split("\n");
-
