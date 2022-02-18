@@ -1,6 +1,7 @@
 import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
 import { create, getNumericDate } from "https://deno.land/x/djwt/mod.ts";
 import { JwtConfig } from "../middleware/jwt.ts";
+import { db } from "../db.ts";
 
 class Users {
   static getRandomId() {
@@ -14,6 +15,14 @@ class Users {
   static async hashPassword(password: string) {
     const salt = await bcrypt.genSalt(8);
     return bcrypt.hash(password, salt);
+  }
+
+  static async find(id: string) {
+    const query = db.prepareQuery<string>(
+      "SELECT id, email, FROM users WHERE id = :id",
+    );
+
+    return await query.oneEntry({ id });
   }
 
   static generateJwt(id: string) {
