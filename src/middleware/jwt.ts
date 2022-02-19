@@ -1,4 +1,4 @@
-import type { RouterContext } from "https://deno.land/x/oak/mod.ts";
+import type { RouterContext } from "https://deno.land/x/oak@/mod.ts";
 import { verify } from "https://deno.land/x/djwt/mod.ts";
 
 const keyData = await Deno.readTextFile("jwk.json");
@@ -16,7 +16,7 @@ export const JwtConfig = {
 };
 
 export const validateJWT = async (
-  { request, response, state }: RouterContext,
+  { request, response, state }: RouterContext<any, any, any>,
   next: VoidFunction,
 ) => {
   const auth = request.headers.get("Authorization");

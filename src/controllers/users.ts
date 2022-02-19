@@ -15,7 +15,7 @@ class Controller {
     }
 
     const hashedPassword = await Users.hashPassword(body.password);
-    const user = await db.query(
+    const user = await db.query<any[]>(
       "INSERT INTO users (id, email, hashed_password, created_at, updated_at) VALUES (?,?,?,?,?)",
       [
         Users.getRandomId(),
@@ -35,7 +35,7 @@ class Controller {
     let user: any;
 
     try {
-      const query = db.prepareQuery<string>(
+      const query = db.prepareQuery<unknown[]>(
         "SELECT id, email, hashed_password FROM users WHERE email = :email",
       );
       user = query.oneEntry({ email: body.email });

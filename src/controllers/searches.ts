@@ -65,7 +65,7 @@ class Controller {
     let data = await db.queryEntries(
       "SELECT * FROM searches WHERE user_id = ? AND id = ?",
       [id, search_id],
-    ).pop();
+    ).pop() || {};
 
     const positive = await db.queryEntries(
       "SELECT word FROM positive WHERE search_id = ?",

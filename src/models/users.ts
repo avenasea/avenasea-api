@@ -18,7 +18,7 @@ class Users {
   }
 
   static async find(id: string) {
-    const query = db.prepareQuery<string>(
+    const query = db.prepareQuery<any[]>(
       "SELECT id, email, FROM users WHERE id = :id",
     );
 
