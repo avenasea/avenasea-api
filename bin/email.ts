@@ -155,6 +155,10 @@ async function getCraigslist(q: string): Promise<any> {
   console.log(`Craigslist found ${results.length} results`);
   console.log(results);
 
+	if (!results.length) {
+		return { txt, htm };
+	}
+
   htm += `<h4 title="${q}">Craigslist</h4>`;
   txt += `Craigslist: ${q}
 	====================================
