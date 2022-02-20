@@ -20,7 +20,7 @@ const sites = [
   "inurl:jobvite.com",
   "inurl:recruiterbox.com",
   "inurl:angel.co/company+inurl:/jobs",
-  "inurl:linkedin.com/jobs/view/",
+  // "inurl:linkedin.com/jobs/view/",
   "inurl:nodesk.co/remote-jobs",
   "inurl:recruitee.com/o",
   "inurl:breezy.hr/p/",
@@ -28,7 +28,7 @@ const sites = [
   "inurl:workatastartup.com/jobs/",
   "inurl:stackoverflow.com/jobs/",
   "inurl:jobs.github.com/position/",
-  "inurl:taleo.net/careersection/+inurl:jobdetail.ftl",
+  //"inurl:taleo.net/careersection/+inurl:jobdetail.ftl",
   "inurl:jobs.us.pwc.com/job/",
   "inurl:jobs.smartrecruiters.com/",
   "inurl:careers.jobscore.com/careers/+inurl:/jobs/",
@@ -94,11 +94,9 @@ async function getCraigslist(q: string): Promise<any> {
     "Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0";
   console.log(`Searching ${cities.length} cities....`);
   const requests: Request[] = cities.map((city) => {
-    return `https://${city}.craigslist.org/search/sof?query=${
-      encodeURIComponent(q)
-    }&${
-      remote ? "is_telecommuting=1" : ""
-    }&employment_type=2&employment_type=3`;
+    return `https://${city}.craigslist.org/search/sof?query=${encodeURIComponent(q)
+      }&${remote ? "is_telecommuting=1" : ""
+      }&employment_type=2&employment_type=3`;
   });
   const pool = pooledMap(100, requests, (url) => {
     try {
@@ -155,9 +153,9 @@ async function getCraigslist(q: string): Promise<any> {
   console.log(`Craigslist found ${results.length} results`);
   console.log(results);
 
-	if (!results.length) {
-		return { txt, htm };
-	}
+  if (!results.length) {
+    return { txt, htm };
+  }
 
   htm += `<h4 title="${q}">Craigslist</h4>`;
   txt += `Craigslist: ${q}
