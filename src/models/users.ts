@@ -1,5 +1,4 @@
-import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
-import { create, getNumericDate } from "https://deno.land/x/djwt/mod.ts";
+import { bcrypt, create, getNumericDate } from "../deps.ts";
 import { JwtConfig } from "../middleware/jwt.ts";
 import { db } from "../db.ts";
 

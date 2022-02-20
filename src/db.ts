@@ -1,3 +1,3 @@
-import { DB } from "https://deno.land/x/sqlite/mod.ts";
+import { DB } from "./deps.ts";
 
 export const db = new DB("database.sqlite");

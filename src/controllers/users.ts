@@ -1,4 +1,4 @@
-import * as bcrypt from "https://deno.land/x/bcrypt/mod.ts";
+import { bcrypt } from '../deps.ts';
 import Users from "../models/users.ts";
 import { db } from "../db.ts";
 

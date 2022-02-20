@@ -1,5 +1,4 @@
-import type { RouterContext } from "https://deno.land/x/oak@/mod.ts";
-import { verify } from "https://deno.land/x/djwt/mod.ts";
+import { RouterContext, verify } from "../deps.ts";
 
 const keyData = await Deno.readTextFile("jwk.json");
 

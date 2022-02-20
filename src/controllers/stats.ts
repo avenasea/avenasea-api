@@ -11,7 +11,7 @@ class Controller {
 
     context.response.status = 200;
     const users = totalUsers?.pop()?.total;
-    const searches =  totalSearches?.pop()?.total;
+    const searches = totalSearches?.pop()?.total;
 
     context.response.body = {
       users,

@@ -1,4 +1,4 @@
-import { Router } from "https://deno.land/x/oak@/mod.ts";
+import { Router } from "../deps.ts";
 import controller from "../controllers/index.ts";
 
 const router = new Router({ prefix: "/api/1" });
