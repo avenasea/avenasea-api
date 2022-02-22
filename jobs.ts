@@ -21,7 +21,7 @@ const sites = [
   "inurl:nodesk.co/remote-jobs",
   "inurl:recruitee.com/o",
   "inurl:breezy.hr/p/",
-  "inurl:icims.com/jobs",
+//  "inurl:icims.com/jobs",
   "inurl:workatastartup.com/jobs/",
   "inurl:stackoverflow.com/jobs/",
   "inurl:jobs.github.com/position/",

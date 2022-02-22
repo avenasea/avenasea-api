@@ -10,7 +10,8 @@ RestartSec=1
 User=ubuntu
 WorkingDirectory=/home/ubuntu/www/grazily.com/grazily-api/
 ExecStart=/home/ubuntu/www/grazily.com/grazily-api/bin/start.sh
-StandardOutput=file:/var/log/grazily-api.log
+StandardOutput=append:/var/log/grazily-api.log
+StandardError=append:/var/log/grazily-api.error.log
 
 [Install]
 WantedBy=multi-user.target

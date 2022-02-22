@@ -24,7 +24,7 @@ const sites = [
   "inurl:nodesk.co/remote-jobs",
   "inurl:recruitee.com/o",
   "inurl:breezy.hr/p/",
-  "inurl:icims.com/jobs",
+  //"inurl:icims.com/jobs",
   "inurl:workatastartup.com/jobs/",
   "inurl:stackoverflow.com/jobs/",
   "inurl:jobs.github.com/position/",
@@ -331,6 +331,9 @@ for (const user of users) {
       html += htm;
     }
 
-    await sendEmail(user.email, search.name, text, html).catch(console.error);
+		// skip empty emails
+		if (text.trim().length && html.trim().length) {
+			await sendEmail(user.email, search.name, text, html).catch(console.error);
+		}
   }
 }
