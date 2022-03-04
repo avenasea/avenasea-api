@@ -12,14 +12,14 @@ class Controller {
     // insert name of search
     await db.query(
       "INSERT INTO searches (id, user_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-      [search_id, id, name, new Date().toISOString(), new Date().toISOString()],
+      [search_id, id, name, new Date().toISOString(), new Date().toISOString()]
     );
 
     // add positive keywords
     for (let word of positive) {
       await db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word],
+        [crypto.randomUUID(), search_id, word.trim()]
       );
     }
 
@@ -27,7 +27,7 @@ class Controller {
     for (let word of negative) {
       await db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word],
+        [crypto.randomUUID(), search_id, word.trim()]
       );
     }
 
@@ -53,7 +53,7 @@ class Controller {
     const id = context.state.user.id;
     const all = await db.queryEntries(
       "SELECT * FROM searches WHERE user_id = ?",
-      [id],
+      [id]
     );
 
     context.response.body = all;
@@ -62,19 +62,22 @@ class Controller {
   async getOne(context: any) {
     const id = context.state.user.id;
     const search_id = context.params.id;
-    let data = await db.queryEntries(
-      "SELECT * FROM searches WHERE user_id = ? AND id = ?",
-      [id, search_id],
-    ).pop() || {};
+    let data =
+      (await db
+        .queryEntries("SELECT * FROM searches WHERE user_id = ? AND id = ?", [
+          id,
+          search_id,
+        ])
+        .pop()) || {};
 
     const positive = await db.queryEntries(
       "SELECT word FROM positive WHERE search_id = ?",
-      [search_id],
+      [search_id]
     );
 
     const negative = await db.queryEntries(
       "SELECT word FROM negative WHERE search_id = ?",
-      [search_id],
+      [search_id]
     );
 
     data.positive = positive.map((w) => w.word);
@@ -92,7 +95,7 @@ class Controller {
     // insert name of search
     await db.query(
       "UPDATE searches SET name = ?, updated_at = ? WHERE id = ?",
-      [name, new Date().toISOString(), search_id],
+      [name, new Date().toISOString(), search_id]
     );
 
     // add positive keywords
@@ -101,7 +104,7 @@ class Controller {
     for (let word of positive) {
       await db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word],
+        [crypto.randomUUID(), search_id, word.trim()]
       );
     }
 
@@ -111,7 +114,7 @@ class Controller {
     for (let word of negative) {
       await db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word],
+        [crypto.randomUUID(), search_id, word.trim()]
       );
     }
 
