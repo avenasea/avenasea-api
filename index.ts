@@ -1,11 +1,8 @@
-import { Application, Router } from "https://deno.land/x/oak@/mod.ts";
-import { oakCors } from "https://deno.land/x/cors/mod.ts";
+import { Application, config, oakCors } from "./src/deps.ts";
 import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import stats from "./src/routes/stats.ts";
-import { config } from "https://deno.land/x/dotenv/mod.ts";
-//import "https://deno.land/x/dotenv/load.ts";
 
 config({ export: true });
 //console.log(config());
