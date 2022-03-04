@@ -19,7 +19,7 @@ class Controller {
     for (let word of positive) {
       await db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim()]
+        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
     }
 
@@ -27,7 +27,7 @@ class Controller {
     for (let word of negative) {
       await db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim()]
+        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
     }
 
@@ -104,7 +104,7 @@ class Controller {
     for (let word of positive) {
       await db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim()]
+        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
     }
 
@@ -114,7 +114,7 @@ class Controller {
     for (let word of negative) {
       await db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim()]
+        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
     }
 
