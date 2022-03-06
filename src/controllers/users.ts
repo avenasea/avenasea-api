@@ -36,6 +36,84 @@ class Controller {
     context.response.body = { message: "User created" };
   }
 
+  async update(context: any) {
+    const id = context.state.user.id;
+    const user = await Users.find(id);
+
+    if (!user) {
+      context.response.status = 400;
+      return (context.response.body = { message: "User does not exist" });
+    }
+
+    const body = JSON.parse(await context.request.body().value);
+    if (body.newEmail) {
+      const existing = await db.query("SELECT * FROM users WHERE email = ?", [
+        body.newEmail,
+      ]);
+
+      if (existing.length) {
+        context.response.status = 400;
+        return (context.response.body = { message: "User already exists" });
+      }
+    }
+
+    if (body.newUsername) {
+      const userNameExisting = await db.query(
+        "SELECT * FROM users WHERE username = ?",
+        [body.newUsername]
+      );
+
+      if (userNameExisting.length) {
+        context.response.status = 400;
+        return (context.response.body = { message: "User already exists" });
+      }
+    }
+
+    if (body.newPassword) {
+      // updating password and fields
+      if (body.newEmail) {
+        user.email = body.newEmail.toLowerCase();
+      }
+
+      if (body.newUsername) {
+        user.username = body.newUsername.toLowerCase();
+      }
+
+      const hashedPassword = await Users.hashPassword(body.newPassword);
+      await db.query<any[]>(
+        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ? WHERE id = ?",
+        [hashedPassword, user.email, user.username, Users.getCurrentTime(), id]
+      );
+    } else {
+      // updating fields only
+      if (body.newEmail) {
+        user.email = body.newEmail.toLowerCase();
+      }
+
+      if (body.newUsername) {
+        user.username = body.newUsername.toLowerCase();
+      }
+
+      await db.query<any[]>(
+        `UPDATE users
+           SET email = ?,
+           username = ?,
+           updated_at = ?
+        WHERE id = ?`,
+        [user.email, user.username, Users.getCurrentTime(), id]
+      );
+    }
+
+    console.log(
+      "user updated! ",
+      user.email,
+      user.username,
+      Users.getCurrentTime()
+    );
+
+    context.response.body = { message: "User updated" };
+  }
+
   async login(context: any) {
     const body = JSON.parse(await context.request.body().value);
     let user: any;

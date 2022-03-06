@@ -8,6 +8,7 @@ router
   .get("/users/:username", controller.getUsername.bind(controller))
   .get("/me", validateJWT, controller.getMe.bind(controller))
   .post("/login", controller.login.bind(controller))
-  .post("/register", controller.register.bind(controller));
+  .post("/register", controller.register.bind(controller))
+  .put("/me", validateJWT, controller.update.bind(controller));
 
 export default router;
