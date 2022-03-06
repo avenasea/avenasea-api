@@ -1,4 +1,4 @@
-import { bcrypt } from '../deps.ts';
+import { bcrypt } from "../deps.ts";
 import Users from "../models/users.ts";
 import { db } from "../db.ts";
 
@@ -9,21 +9,27 @@ class Controller {
       body.email,
     ]);
 
-    if (existing.length) {
+    const userNameExisting = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [body.username]
+    );
+
+    if (existing.length || userNameExisting.length) {
       context.response.status = 400;
       return (context.response.body = { message: "User already exists" });
     }
 
     const hashedPassword = await Users.hashPassword(body.password);
     const user = await db.query<any[]>(
-      "INSERT INTO users (id, email, hashed_password, created_at, updated_at) VALUES (?,?,?,?,?)",
+      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at) VALUES (?,?,?,?,?,?)",
       [
         Users.getRandomId(),
-        body.email,
+        body.email.toLowerCase(),
+        body.username.toLowerCase(),
         hashedPassword,
         Users.getCurrentTime(),
         Users.getCurrentTime(),
-      ],
+      ]
     );
 
     console.log("user registered! ", body.email, Users.getCurrentTime());
@@ -36,9 +42,9 @@ class Controller {
 
     try {
       const query = db.prepareQuery<unknown[]>(
-        "SELECT id, email, hashed_password FROM users WHERE email = :email",
+        "SELECT id, email, hashed_password FROM users WHERE email = :email"
       );
-      user = query.oneEntry({ email: body.email });
+      user = query.oneEntry({ email: body.email.toLowerCase() });
       query.finalize();
     } catch (err) {
       console.error(err);
@@ -50,7 +56,7 @@ class Controller {
     console.log("user login: ", user.email);
     const comparison = await bcrypt.compare(
       body.password,
-      user.hashed_password,
+      user.hashed_password
     );
 
     if (comparison) {
@@ -80,6 +86,18 @@ class Controller {
       context.response.body = { message: "User not found" };
     } else {
       delete user.hashedPassword;
+      context.response.body = user;
+    }
+  }
+
+  async getUsername(context: any) {
+    const username = context.params.username;
+    const user = await Users.findByUsername(username);
+
+    if (!user) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+    } else {
       context.response.body = user;
     }
   }

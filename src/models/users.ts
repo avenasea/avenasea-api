@@ -18,10 +18,23 @@ class Users {
 
   static async find(id: string) {
     const query = db.prepareQuery<any[]>(
-      "SELECT id, email, FROM users WHERE id = :id",
+      "SELECT id, email, username, created_at FROM users WHERE id = :id"
     );
 
     return await query.oneEntry({ id });
+  }
+
+  static async findByUsername(username: string) {
+    const query = db.prepareQuery<any[]>(
+      "SELECT username, created_at FROM users WHERE username = :username"
+    );
+
+    try {
+      return await query.oneEntry({ username });
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 
   static generateJwt(id: string) {
