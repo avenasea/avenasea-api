@@ -1,5 +1,6 @@
 // import Searches from "../models/searches.ts";
 import { db } from "../db.ts";
+import Users from "../models/users.ts";
 
 class Controller {
   async post(context: any) {
@@ -98,13 +99,9 @@ class Controller {
     const pWords = <[]>positive.map((p) => p.word);
     const nWords = <[]>negative.map((n) => n.word);
     console.log("pWords", pWords);
-    const args = [].concat(pWords, nWords);
+    const args = [].concat(pWords, nWords, id);
     console.log("args", args);
     /*
-           INNER JOIN positive pos ON pos.search_id = s.id
-       INNER JOIN negative neg ON neg.search_id = s.id
-
-       */
     const searches = await db.queryEntries(
       `SELECT s.* FROM searches s, positive p, negative n
       INNER JOIN positive ON s.id = positive.search_id
@@ -114,7 +111,29 @@ class Controller {
       args
     );
 
-    console.log("searches: ", searches.length);
+       */
+    let searches = await db.queryEntries(
+      `SELECT s.*
+        FROM searches s
+        WHERE EXISTS (SELECT 1 FROM positive p WHERE p.word IN (${pIn}) AND p.search_id = s.id)
+        AND NOT EXISTS (SELECT 1 FROM positive p WHERE p.word IN (${nIn}) AND p.search_id = s.id)
+        AND s.type = 'job' AND s.user_id != ?
+       `,
+      args
+    );
+
+    for (let search of searches) {
+      const { user_id } = search as { user_id: string };
+      const user = await Users.find(user_id);
+      search.user = user;
+    }
+
+    // filter out those who wish to not be contacted
+    searches = searches.filter((search) => {
+      return search.user.contactme;
+    });
+
+    console.log("searches: ", searches);
     /*
     const searches = db.queryEntries(`
       SELECT s.*,
@@ -130,7 +149,7 @@ class Controller {
 
     console.log(searches);
 */
-    context.response.body = [];
+    context.response.body = searches;
   }
 
   async getOne(context: any) {

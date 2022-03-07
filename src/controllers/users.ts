@@ -21,7 +21,7 @@ class Controller {
 
     const hashedPassword = await Users.hashPassword(body.password);
     const user = await db.query<any[]>(
-      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at) VALUES (?,?,?,?,?,?)",
+      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme) VALUES (?,?,?,?,?,?,?)",
       [
         Users.getRandomId(),
         body.email.toLowerCase(),
@@ -29,6 +29,7 @@ class Controller {
         hashedPassword,
         Users.getCurrentTime(),
         Users.getCurrentTime(),
+        body.contactme,
       ]
     );
 
@@ -79,10 +80,19 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
+      user.contactme = Number(body.contactme);
+
       const hashedPassword = await Users.hashPassword(body.newPassword);
       await db.query<any[]>(
-        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ? WHERE id = ?",
-        [hashedPassword, user.email, user.username, Users.getCurrentTime(), id]
+        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ? WHERE id = ?",
+        [
+          hashedPassword,
+          user.email,
+          user.username,
+          user.contactme,
+          Users.getCurrentTime(),
+          id,
+        ]
       );
     } else {
       // updating fields only
@@ -94,13 +104,16 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
+      user.contactme = Number(body.contactme);
+
       await db.query<any[]>(
         `UPDATE users
            SET email = ?,
            username = ?,
-           updated_at = ?
+           updated_at = ?,
+           contactme = ?
         WHERE id = ?`,
-        [user.email, user.username, Users.getCurrentTime(), id]
+        [user.email, user.username, Users.getCurrentTime(), user.contactme, id]
       );
     }
 
