@@ -285,7 +285,7 @@ for (const user of users) {
   if (args.email && user.email !== args.email) continue;
 
   const searches = await db.queryEntries(
-    "SELECT * from searches WHERE user_id = ?",
+    "SELECT * from searches WHERE user_id = ? AND type = 'job'",
     [user.id],
   );
 
