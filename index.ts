@@ -3,6 +3,7 @@ import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import stats from "./src/routes/stats.ts";
+import affiliates from "./src/routes/affiliates.ts";
 
 config({ export: true });
 //console.log(config());
@@ -34,6 +35,8 @@ app.use(index.routes());
 app.use(index.allowedMethods());
 app.use(stats.routes());
 app.use(stats.allowedMethods());
+app.use(affiliates.routes());
+app.use(affiliates.allowedMethods());
 
 console.log(`Listening on http://localhost:${port}/api/1`);
 await app.listen({ port });

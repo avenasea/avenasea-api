@@ -19,6 +19,8 @@ class Controller {
       return (context.response.body = { message: "User already exists" });
     }
 
+    // todo:
+    // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
     const hashedPassword = await Users.hashPassword(body.password);
     const user = await db.query<any[]>(
       "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme) VALUES (?,?,?,?,?,?,?)",
