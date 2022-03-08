@@ -129,7 +129,7 @@ class Controller {
     }
 
     // filter out those who wish to not be contacted
-    searches = searches.filter((search) => {
+    searches = searches.filter((search: any) => {
       return search.user.contactme;
     });
 
