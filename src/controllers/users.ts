@@ -23,7 +23,7 @@ class Controller {
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
     const hashedPassword = await Users.hashPassword(body.password);
     const user = await db.query<any[]>(
-      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme) VALUES (?,?,?,?,?,?,?)",
+      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone) VALUES (?,?,?,?,?,?,?,?)",
       [
         Users.getRandomId(),
         body.email.toLowerCase(),
@@ -32,6 +32,7 @@ class Controller {
         Users.getCurrentTime(),
         Users.getCurrentTime(),
         body.contactme,
+        body.phone,
       ]
     );
 
@@ -72,6 +73,9 @@ class Controller {
       }
     }
 
+    user.contactme = Number(body.contactme);
+    user.phone = body.newPhone;
+
     if (body.newPassword) {
       // updating password and fields
       if (body.newEmail) {
@@ -82,17 +86,16 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
-      user.contactme = Number(body.contactme);
-
       const hashedPassword = await Users.hashPassword(body.newPassword);
       await db.query<any[]>(
-        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ? WHERE id = ?",
+        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ? WHERE id = ?",
         [
           hashedPassword,
           user.email,
           user.username,
           user.contactme,
           Users.getCurrentTime(),
+          user.phone,
           id,
         ]
       );
@@ -106,16 +109,22 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
-      user.contactme = Number(body.contactme);
-
       await db.query<any[]>(
         `UPDATE users
            SET email = ?,
            username = ?,
            updated_at = ?,
-           contactme = ?
+           contactme = ?,
+           phone = ?
         WHERE id = ?`,
-        [user.email, user.username, Users.getCurrentTime(), user.contactme, id]
+        [
+          user.email,
+          user.username,
+          Users.getCurrentTime(),
+          user.contactme,
+          user.phone,
+          id,
+        ]
       );
     }
 
@@ -123,6 +132,7 @@ class Controller {
       "user updated! ",
       user.email,
       user.username,
+      user.phone,
       Users.getCurrentTime()
     );
 
