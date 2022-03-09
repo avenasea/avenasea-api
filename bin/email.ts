@@ -4,7 +4,7 @@ import {
 } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 import { pooledMap } from "https://deno.land/std/async/mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
-import { config } from "https://deno.land/x/dotenv/mod.ts";
+import { config } from "../src/deps.ts";
 import { db } from "../src/db.ts";
 import cities from "./cities.js";
 
@@ -276,7 +276,14 @@ async function sendEmail(
   return await res.json();
 }
 
-const users = await db.queryEntries("SELECT * FROM users");
+let users = [];
+
+if (args.email) {
+	users = await db.queryEntries("SELECT * FROM users WHERE email = ?", [args.email]);
+} else {
+	users = await db.queryEntries("SELECT * FROM users");
+}
+
 console.log(users);
 
 for (const user of users) {
