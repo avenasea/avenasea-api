@@ -37,6 +37,14 @@ class Users {
     }
   }
 
+  static async findAll() {
+    const users = db.queryEntries(
+      "SELECT username, created_at, email, phone FROM users WHERE contactme = 1 ORDER BY created_at DESC"
+    );
+
+    return users;
+  }
+
   static generateJwt(id: string) {
     // Create the payload with the expiration date (token have an expiry date) and the id of current user (you can add that you want)
     const payload = {

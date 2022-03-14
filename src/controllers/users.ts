@@ -204,6 +204,17 @@ class Controller {
       context.response.body = user;
     }
   }
+
+  async getAll(context: any) {
+    const users = await Users.findAll();
+
+    if (!users.length) {
+      context.response.status = 400;
+      context.response.body = { message: "Users not found" };
+    } else {
+      context.response.body = users;
+    }
+  }
 }
 
 export default new Controller();
