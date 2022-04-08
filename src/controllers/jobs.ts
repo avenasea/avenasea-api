@@ -73,7 +73,10 @@ class Controller {
   }
 
   async getAll(context: any) {
-    const all = await db.queryEntries("SELECT * FROM jobs ORDER BY created_at");
+    const all = await db.queryEntries(`
+        SELECT j.* FROM jobs as j
+       ORDER BY j.created_at  
+    `);
 
     context.response.body = all;
   }
