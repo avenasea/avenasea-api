@@ -10,6 +10,7 @@ router
   .get("/jobs/:id", controller.getOne.bind(controller))
   .put("/jobs/:id", validateJWT, controller.update.bind(controller))
   .get("/jobs/tags/:tag", controller.getByTag.bind(controller))
+  .get("/jobs/users/:username", controller.getByUsername.bind(controller))
   .post("/jobs", validateJWT, controller.post.bind(controller))
   .delete("/jobs/:id", validateJWT, controller.delete.bind(controller));
 

@@ -95,6 +95,19 @@ class Controller {
     context.response.body = all;
   }
 
+  async getByUsername(context: any) {
+    const { username } = context.params;
+
+    const all = await db.queryEntries(
+      `
+        SELECT j.*, u.username FROM jobs as j
+        INNER JOIN users u ON j.user_id = u.id  WHERE u.username = ? ORDER BY j.created_at DESC
+    `,
+      [username.toLowerCase()]
+    );
+
+    context.response.body = all;
+  }
   async getOne(context: any) {
     // const id = context.state.user.id;
     const job_id = context.params.id;
