@@ -74,8 +74,8 @@ class Controller {
 
   async getAll(context: any) {
     const all = await db.queryEntries(`
-        SELECT j.*, u.username FROM jobs as j, users as u
-       INNER JOIN jobs ON j.user_id = u.id ORDER BY j.created_at DESC
+        SELECT j.*, u.username FROM jobs as j
+        INNER JOIN users u ON j.user_id = u.id ORDER BY j.created_at DESC
     `);
 
     context.response.body = all;
