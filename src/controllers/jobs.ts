@@ -81,6 +81,20 @@ class Controller {
     context.response.body = all;
   }
 
+  async getByTag(context: any) {
+    const tag = context.params.tag.replace(/-+/g, " ");
+
+    const all = await db.queryEntries(
+      `
+        SELECT j.*, u.username FROM jobs as j
+        INNER JOIN users u, positive p ON j.user_id = u.id AND j.id = p.search_id WHERE p.word = ? ORDER BY j.created_at DESC
+    `,
+      [tag]
+    );
+
+    context.response.body = all;
+  }
+
   async getOne(context: any) {
     // const id = context.state.user.id;
     const job_id = context.params.id;
