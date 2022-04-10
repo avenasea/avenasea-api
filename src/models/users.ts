@@ -26,11 +26,18 @@ class Users {
 
   static async findByUsername(username: string) {
     const query = db.prepareQuery<any[]>(
-      "SELECT username, created_at, contactme, phone FROM users WHERE username = :username"
+      "SELECT username, email, created_at, contactme, phone FROM users WHERE username = :username"
     );
 
     try {
-      return await query.oneEntry({ username });
+      const user = await query.oneEntry({ username });
+
+      if (!user.contactme) {
+        delete user.email;
+        delete user.phone;
+      }
+
+      return user;
     } catch (err) {
       console.error(err);
       return null;
