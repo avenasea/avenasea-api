@@ -30,6 +30,19 @@ class Controller {
       tags,
     };
   }
+
+  async jobTags(context: any) {
+    console.log("jobTags");
+    const tags = await db.queryEntries(
+      `SELECT p.word, COUNT(p.word) as count from positive as p INNER JOIN jobs j ON j.id = p.search_id GROUP BY word ORDER BY count DESC LIMIT 50`
+    );
+
+    context.response.status = 200;
+
+    context.response.body = {
+      tags,
+    };
+  }
 }
 
 export default new Controller();
