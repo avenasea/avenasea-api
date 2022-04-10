@@ -113,7 +113,10 @@ class Controller {
     const job_id = context.params.id;
     let data =
       (await db
-        .queryEntries("SELECT * FROM jobs WHERE id = ?", [job_id])
+        .queryEntries(
+          "SELECT j.*, u.username FROM jobs as j INNER JOIN users u ON j.user_id = u.id WHERE j.id = ?",
+          [job_id]
+        )
         .pop()) || {};
 
     const positive = await db.queryEntries(
