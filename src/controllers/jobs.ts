@@ -75,7 +75,7 @@ class Controller {
   async getAll(context: any) {
     const all = await db.queryEntries(`
         SELECT j.* FROM jobs as j
-       ORDER BY j.created_at  
+       ORDER BY j.created_at DESC
     `);
 
     context.response.body = all;
