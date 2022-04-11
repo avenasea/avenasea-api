@@ -82,6 +82,20 @@ class Controller {
     context.response.body = all;
   }
 
+  async getByUsername(context: any) {
+    const { username } = context.params;
+
+    const all = await db.queryEntries(
+      `
+        SELECT s.*, u.username FROM searches as s
+        INNER JOIN users u ON s.user_id = u.id WHERE u.username = ? AND s.type = 'job' ORDER BY s.created_at DESC
+    `,
+      [username]
+    );
+
+    context.response.body = all;
+  }
+
   async getCandidates(context: any) {
     // todo
     // get search obj

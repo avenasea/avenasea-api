@@ -14,6 +14,7 @@ router
   .get("/searches/:id", controller.getOne.bind(controller))
   .put("/searches/:id", validateJWT, controller.update.bind(controller))
   .get("/searches/tags/:tag", controller.getByTag.bind(controller))
+  .get("/searches/users/:username", controller.getByUsername.bind(controller))
   .post("/searches", validateJWT, controller.post.bind(controller))
   .delete("/searches/:id", validateJWT, controller.delete.bind(controller));
 
