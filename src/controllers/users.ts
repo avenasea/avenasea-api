@@ -23,7 +23,7 @@ class Controller {
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
     const hashedPassword = await Users.hashPassword(body.password);
     const user = await db.query<any[]>(
-      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone) VALUES (?,?,?,?,?,?,?,?)",
+      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
       [
         Users.getRandomId(),
         body.email.toLowerCase(),
@@ -33,6 +33,7 @@ class Controller {
         Users.getCurrentTime(),
         body.contactme,
         body.phone,
+        body.location,
       ]
     );
 
@@ -75,6 +76,7 @@ class Controller {
 
     user.contactme = Number(body.contactme);
     user.phone = body.newPhone;
+    user.location = body.location;
 
     if (body.newPassword) {
       // updating password and fields
@@ -88,7 +90,7 @@ class Controller {
 
       const hashedPassword = await Users.hashPassword(body.newPassword);
       await db.query<any[]>(
-        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ? WHERE id = ?",
+        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
         [
           hashedPassword,
           user.email,
@@ -96,6 +98,7 @@ class Controller {
           user.contactme,
           Users.getCurrentTime(),
           user.phone,
+          user.location,
           id,
         ]
       );
@@ -115,7 +118,8 @@ class Controller {
            username = ?,
            updated_at = ?,
            contactme = ?,
-           phone = ?
+           phone = ?,
+           location = ?
         WHERE id = ?`,
         [
           user.email,
@@ -123,6 +127,7 @@ class Controller {
           Users.getCurrentTime(),
           user.contactme,
           user.phone,
+          user.location,
           id,
         ]
       );

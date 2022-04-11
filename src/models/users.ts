@@ -18,7 +18,7 @@ class Users {
 
   static async find(id: string) {
     const query = db.prepareQuery<any[]>(
-      "SELECT id, email, username, created_at, contactme, phone FROM users WHERE id = :id"
+      "SELECT id, email, username, created_at, contactme, phone, location FROM users WHERE id = :id"
     );
 
     return await query.oneEntry({ id });
@@ -26,7 +26,7 @@ class Users {
 
   static async findByUsername(username: string) {
     const query = db.prepareQuery<any[]>(
-      "SELECT username, email, created_at, contactme, phone FROM users WHERE username = :username"
+      "SELECT username, email, created_at, contactme, phone, location FROM users WHERE username = :username"
     );
 
     try {
