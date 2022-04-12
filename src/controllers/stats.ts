@@ -5,17 +5,24 @@ class Controller {
     const totalUsers = await db.queryEntries(
       "SELECT count(*) as total from users"
     );
+
     const totalSearches = await db.queryEntries(
       "SELECT count(*) as total from searches"
     );
 
-    context.response.status = 200;
+    const totalJobs = await db.queryEntries(
+      "SELECT count(*) as total from jobs"
+    );
+
     const users = totalUsers?.pop()?.total;
     const searches = totalSearches?.pop()?.total;
+    const jobs = totalJobs?.pop()?.total;
 
+    context.response.status = 200;
     context.response.body = {
       users,
       searches,
+      jobs,
     };
   }
 
