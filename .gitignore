@@ -4,3 +4,4 @@ database.sqlite
 *.key
 ./api
 jwk.json
+.DS_Store

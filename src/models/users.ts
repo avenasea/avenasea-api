@@ -18,7 +18,26 @@ class Users {
 
   static async find(id: string) {
     const query = db.prepareQuery<any[]>(
-      "SELECT id, email, username, created_at, contactme, phone, location FROM users WHERE id = :id"
+      `SELECT
+      users.id AS id,
+      email,
+      username,
+      created_at,
+      contactme,
+      phone,
+      location,
+      stripe_customer_id,
+      cancel_at_period_end,
+      billing.status,
+      billing.renewal_date,
+      plans.name AS plan_name,
+      plans.billing_frequency,
+      plans.job_search_profiles,
+      plans.candidate_search_profiles
+      FROM users
+      LEFT JOIN billing ON billing.user_id = users.id
+      LEFT JOIN plans ON billing.plan_id = plans.id
+      WHERE users.id = :id`
     );
 
     return await query.oneEntry({ id });
@@ -26,7 +45,7 @@ class Users {
 
   static async findByUsername(username: string) {
     const query = db.prepareQuery<any[]>(
-      "SELECT username, email, created_at, contactme, phone, location FROM users WHERE username = :username"
+      "SELECT username, email, created_at, contactme, phone, location, stripe_customer_id FROM users WHERE username = :username"
     );
 
     try {
@@ -60,6 +79,19 @@ class Users {
     );
 
     return users;
+  }
+
+  static async findByStripeID(stripeCustomerID: string) {
+    const query = db.prepareQuery<any[]>(
+      "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE stripe_customer_id = :stripeCustomerID"
+    );
+
+    try {
+      return await query.oneEntry({ stripeCustomerID });
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 
   static generateJwt(id: string) {

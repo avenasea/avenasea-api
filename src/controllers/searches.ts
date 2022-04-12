@@ -1,6 +1,7 @@
 // import Searches from "../models/searches.ts";
 import { db } from "../db.ts";
 import Users from "../models/users.ts";
+import { checkPerms } from "../middleware/perms.ts";
 
 class Controller {
   async post(context: any) {
@@ -9,6 +10,10 @@ class Controller {
     const { positive, negative, name, type } = body;
     const data: any = {};
     const search_id = crypto.randomUUID();
+
+    if ((await checkPerms(id, type)) == false) {
+      return (context.response.status = 403);
+    }
 
     // insert name of search
     await db.query(

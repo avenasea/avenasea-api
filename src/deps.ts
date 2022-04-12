@@ -9,6 +9,8 @@ import * as bcrypt from "https://deno.land/x/bcrypt@v0.3.0/mod.ts";
 import { DB } from "https://deno.land/x/sqlite@v3.2.1/mod.ts";
 import { config } from "https://deno.land/x/dotenv@v3.2.0/mod.ts";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
+import Stripe from "https://esm.sh/stripe@8.209.0?no-check";
+import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
 export {
   Application,
   RouterContext,
@@ -20,4 +22,6 @@ export {
   DB,
   config,
   oakCors,
+  Stripe,
+  hmac,
 };
