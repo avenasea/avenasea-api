@@ -150,7 +150,14 @@ class Controller {
 
     try {
       const query = db.prepareQuery<unknown[]>(
-        "SELECT id, email, hashed_password FROM users WHERE email = :email"
+        `SELECT
+        id,
+        email,
+        hashed_password,
+        billing.status
+        FROM users
+        LEFT JOIN billing ON billing.user_id = users.id
+        WHERE email = :email`
       );
       user = query.oneEntry({ email: body.email.toLowerCase() });
       query.finalize();
