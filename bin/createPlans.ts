@@ -84,8 +84,18 @@ const plans: Array<plan> = [
 ];
 
 const createStripeProducts = async () => {
+  const stripePrices = await stripe.prices.list({
+    limit: 100,
+  });
   const createdPlans = await Promise.all(
     plans.map(async (plan) => {
+      const existing = stripePrices.data.find(
+        (price: any) => price.product == plan.id
+      );
+      if (existing) {
+        plan.stripe_price_id = existing.id;
+        return plan;
+      }
       const product = await stripe.products.create({
         id: plan.id,
         name: plan.name,
