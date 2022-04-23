@@ -4,6 +4,7 @@ import Plans from "../models/plans.ts";
 import Billing from "../models/billing.ts";
 import { config, Stripe } from "../deps.ts";
 import verifyStripeWebhook from "../utils/verifyStripeWebhook.ts";
+import verifyCoinpaymentsWebhook from "../utils/verifyCoinpaymentsWebhook.ts";
 
 const ENV = config();
 
@@ -181,6 +182,59 @@ class Controller {
       default:
       // Unexpected event type
     }
+    context.response.status = 200;
+  }
+
+  async coinpaymentsWebhook(context: any) {
+    const rawBody = await context.request.body({ type: "text" }).value;
+    const parsedBody = await context.request.body().value;
+
+    const verified = verifyCoinpaymentsWebhook(
+      ENV.COINPAYMENTS_WEBHOOK_SECRET,
+      context.request.headers.get("HMAC"),
+      rawBody
+    );
+
+    if (!verified) return (context.response.status = 401);
+
+    // payment complete
+    if (parsedBody.get("status") >= 100) {
+      const user: any = await Users.find(parsedBody.get("invoice"));
+      if (!user) return;
+
+      let existing: any = await Billing.find(user.id).catch(console.error);
+      const planData: any = await Plans.find(parsedBody.get("item_number"));
+
+      if (
+        !existing ||
+        existing.status != "active" ||
+        existing.payment_type != "coinpayments" ||
+        existing.plan_id != parsedBody.get("item_number")
+      )
+        existing = null;
+
+      let renewalDate = "95617584000";
+      if (planData.billing_frequency == "monthly") {
+        const startingDate = existing
+          ? new Date(existing.renewal_date * 1000)
+          : new Date();
+        startingDate.setMonth(
+          startingDate.getMonth() + parseInt(parsedBody.get("quantity"))
+        );
+        renewalDate = Math.floor(startingDate.getTime() / 1000).toString();
+      }
+
+      await Billing.updateOrInsert({
+        userID: user.id,
+        status: "active",
+        stripeSubscriptionID: null,
+        renewalDate: renewalDate,
+        paymentType: "coinpayments",
+        planID: parsedBody.get("item_number"),
+        cancelAtPeriodEnd: false,
+      });
+    }
+
     context.response.status = 200;
   }
 }

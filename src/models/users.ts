@@ -30,10 +30,12 @@ class Users {
       cancel_at_period_end,
       billing.status,
       billing.renewal_date,
+      billing.payment_type,
       plans.name AS plan_name,
       plans.billing_frequency,
       plans.job_search_profiles,
-      plans.candidate_search_profiles
+      plans.candidate_search_profiles,
+      plans.id as plan_id
       FROM users
       LEFT JOIN billing ON billing.user_id = users.id
       LEFT JOIN plans ON billing.plan_id = plans.id
