@@ -195,11 +195,23 @@ class Controller {
   async getMe(context: any) {
     //get user id from jwt
     const id = context.state.user.id;
-    const user = await Users.find(id);
+    const user: any = await Users.find(id);
     if (typeof user === "undefined") {
       context.response.status = 400;
       context.response.body = { message: "User not found" };
     } else {
+      // check subscription expiry
+      if (
+        user.payment_type == "coinpayments" &&
+        user.status == "active" &&
+        user.renewal_date <= Math.floor(Date.now() / 1000)
+      ) {
+        user.status = "canceled";
+        db.query("UPDATE billing SET status = ? WHERE user_id = ?", [
+          user.status,
+          id,
+        ]);
+      }
       delete user.hashedPassword;
       context.response.body = user;
     }

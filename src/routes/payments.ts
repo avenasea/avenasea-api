@@ -15,5 +15,9 @@ router.post(
   controller.cancelSubscription.bind(controller)
 );
 router.post("/webhook", controller.webhook.bind(controller));
+router.post(
+  "/coinpayments-webhook",
+  controller.coinpaymentsWebhook.bind(controller)
+);
 
 export default router;

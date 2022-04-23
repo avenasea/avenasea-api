@@ -3,7 +3,7 @@ import { db } from "../db.ts";
 interface UpdateOrInsertParams {
   userID: string;
   status: string;
-  stripeSubscriptionID: string;
+  stripeSubscriptionID: string | null;
   renewalDate: string;
   paymentType: string;
   planID: string;
