@@ -4,6 +4,14 @@ import Users from "../models/users.ts";
 export const checkPerms = async (userID: string, type: string) => {
   const user: any = await Users.find(userID);
   if (!user) return false;
+
+  // check trial
+  const trialLength = 2; //weeks
+  const trialEnd = new Date(user.created_at);
+  trialEnd.setDate(trialEnd.getDate() + trialLength * 7);
+
+  if (Date.now() < trialEnd.getTime()) return true;
+
   if (user.status != "active") return false;
 
   const maxProfiles =
