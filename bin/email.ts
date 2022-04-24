@@ -6,6 +6,7 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 import { config } from "../src/deps.ts";
 import { db } from "../src/db.ts";
 import cities from "./cities.js";
+import { ats } from './ats.ts';
 import {QueryParameter, RowObject} from "https://deno.land/x/sqlite@v3.2.1/src/query.ts";
 
 const ENV = config();
@@ -13,28 +14,7 @@ const args = parse(Deno.args);
 const UA =
   "Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0";
 
-const sites = [
-  "inurl:lever.co",
-  "inurl:workable.com",
-  "inurl:greenhouse.io",
-  "inurl:jobvite.com",
-  "inurl:recruiterbox.com",
-  "inurl:angel.co/company+inurl:/jobs",
-  // "inurl:linkedin.com/jobs/view/",
-  "inurl:nodesk.co/remote-jobs",
-  "inurl:recruitee.com/o",
-  "inurl:breezy.hr/p/",
-  //"inurl:icims.com/jobs",
-  "inurl:workatastartup.com/jobs/",
-  "inurl:stackoverflow.com/jobs/",
-  "inurl:jobs.github.com/position/",
-  //"inurl:taleo.net/careersection/+inurl:jobdetail.ftl",
-  "inurl:jobs.us.pwc.com/job/",
-  "inurl:jobs.smartrecruiters.com/",
-  "inurl:careers.jobscore.com/careers/+inurl:/jobs/",
-  "inurl:jobs.gohire.io/",
-  "inurl:join.com/jobs/",
-];
+const sites = ats;
 
 interface WhateverResult {
   title: string;
