@@ -6,7 +6,7 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 import { config } from "../src/deps.ts";
 import { db } from "../src/db.ts";
 import cities from "./cities.js";
-import { ats } from './ats.ts';
+import { ats } from '../ats.ts';
 import {QueryParameter, RowObject} from "https://deno.land/x/sqlite@v3.2.1/src/query.ts";
 
 const ENV = config();
