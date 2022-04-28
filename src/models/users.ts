@@ -75,7 +75,6 @@ class Users {
             FROM searches 
             GROUP BY user_id
         ) s ON s.user_id = u.id
-        WHERE u.contactme = 1 
         ORDER BY u.created_at DESC
 `
     );
