@@ -95,6 +95,19 @@ class Users {
     }
   }
 
+  static async findByEmail(email: string) {
+    const query = db.prepareQuery<any[]>(
+      "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE email = :email"
+    );
+
+    try {
+      return await query.oneEntry({ email });
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }
+
   static generateJwt(id: string) {
     // Create the payload with the expiration date (token have an expiry date) and the id of current user (you can add that you want)
     const payload = {
