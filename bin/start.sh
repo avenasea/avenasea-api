@@ -5,4 +5,4 @@
 . .env.defaults
 . .env
 
-deno run --allow-all --unstable --no-check ./index.ts 
+deno run -Ar --unstable --no-check ./index.ts 
