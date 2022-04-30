@@ -45,7 +45,7 @@ class Users {
     return await query.oneEntry({ id });
   }
 
-  static async findByUsername(username: string) {
+  static async findByUsername(username: string, id: string) {
     const query = db.prepareQuery<any[]>(
       "SELECT username, email, created_at, contactme, phone, location, stripe_customer_id FROM users WHERE username = :username"
     );
@@ -53,7 +53,7 @@ class Users {
     try {
       const user = await query.oneEntry({ username });
 
-      if (!user.contactme) {
+      if (!user.contactme || !id) {
         delete user.email;
         delete user.phone;
       }

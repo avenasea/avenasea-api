@@ -1,11 +1,15 @@
 import { Router } from "../deps.ts";
 import controller from "../controllers/users.ts";
-import { validateJWT } from "../middleware/jwt.ts";
+import { validateJWT, validateJWTOptionally } from "../middleware/jwt.ts";
 
 const router = new Router({ prefix: "/api/1" });
 
 router
-  .get("/users/:username", controller.getUsername.bind(controller))
+  .get(
+    "/users/:username",
+    validateJWTOptionally,
+    controller.getUsername.bind(controller)
+  )
   .get("/users", validateJWT, controller.getAll.bind(controller))
   .get("/me", validateJWT, controller.getMe.bind(controller))
   .post("/login", controller.login.bind(controller))

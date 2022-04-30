@@ -218,8 +218,9 @@ class Controller {
   }
 
   async getUsername(context: any) {
+    const id = context.state.user?.id;
     const username = context.params.username;
-    const user = await Users.findByUsername(username);
+    const user = await Users.findByUsername(username, id);
 
     if (!user) {
       context.response.status = 400;
