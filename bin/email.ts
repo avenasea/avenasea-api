@@ -12,9 +12,17 @@ import {
 
 const ENV = config();
 const args = parse(Deno.args);
-const UA =
-  "Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0";
-
+const UAs = [
+  "Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.88 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
+  "Mozilla/5.0 (X11; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0",
+  "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0",
+];
 const sites = ats;
 
 interface WhateverResult {
@@ -37,9 +45,26 @@ async function getSerps(q: string): Promise<any> {
   let htm: string = "";
   let data: any = {};
 
+  const client = Deno.createHttpClient({
+    proxy: {
+      url: "http://p.webshare.io",
+      basicAuth: {
+        username: "dmdgluqz-US-rotate",
+        password: "8rxcagjln8n36to4",
+      },
+    },
+  });
+
   try {
+    const UA = UAs[~~(Math.random() * UAs.length)];
     const res = await fetch(
-      `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`
+      `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
+      {
+        client,
+        headers: {
+          "User-Agent": UA,
+        },
+      }
     );
     if (!res.ok) {
       console.error(await res.text());
@@ -218,6 +243,8 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
 
   let res: Response;
   try {
+    const UA = UAs[~~(Math.random() * UAs.length)];
+
     res = <Response>await fetch(url, {
       client,
       headers: {
