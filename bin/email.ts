@@ -1,13 +1,14 @@
-import {
-  DOMParser,
-} from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
+import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 import { pooledMap } from "https://deno.land/std/async/mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
 import { config } from "../src/deps.ts";
 import { db } from "../src/db.ts";
 import cities from "./cities.js";
-import { ats } from '../ats.ts';
-import {QueryParameter, RowObject} from "https://deno.land/x/sqlite@v3.2.1/src/query.ts";
+import { ats } from "../ats.ts";
+import {
+  QueryParameter,
+  RowObject,
+} from "https://deno.land/x/sqlite@v3.2.1/src/query.ts";
 
 const ENV = config();
 const args = parse(Deno.args);
@@ -34,23 +35,26 @@ interface CraigsResult {
 async function getSerps(q: string): Promise<any> {
   let txt: string = "";
   let htm: string = "";
+  let data: any = {};
 
-  const res = await fetch(
-    `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
-  );
-  if (!res.ok) {
-    console.error(await res.text());
-    return {};
+  try {
+    const res = await fetch(
+      `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`
+    );
+    if (!res.ok) {
+      console.error(await res.text());
+      return {};
+    }
+
+    data = await res.json();
+    console.log("fetching:", q);
+
+    if (!data.organic_results?.length) return { txt, htm };
+  } catch (err) {
+    console.error(err);
   }
-  const data = await res.json();
 
-  console.log("fetching:", q);
-
-  if (!data.organic_results?.length) return { txt, htm };
-
-  const qmatchres = q.match(
-      /^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/,
-  );
+  const qmatchres = q.match(/^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/);
 
   if (qmatchres) {
     const [orig, host, skip, query] = qmatchres;
@@ -90,16 +94,18 @@ async function getCraigslist(q: string): Promise<CraigsResult> {
   const results: WhateverResult[] = [];
   console.log(`Searching ${cities.length} cities....`);
   const requests: string[] = cities.map((city) => {
-    return `https://${city}.craigslist.org/search/sof?query=${encodeURIComponent(q)
-      }&${remote ? "is_telecommuting=1" : ""
-      }&employment_type=2&employment_type=3`;
+    return `https://${city}.craigslist.org/search/sof?query=${encodeURIComponent(
+      q
+    )}&${
+      remote ? "is_telecommuting=1" : ""
+    }&employment_type=2&employment_type=3`;
   });
   const pool: any = pooledMap(100, requests, (url) => {
     try {
       return getWithFetch(url).catch(console.error);
     } catch (err) {
       console.error(err);
-      return Promise.resolve({ body: "", url});
+      return Promise.resolve({ body: "", url });
     }
   });
 
@@ -207,7 +213,7 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
     });
   } catch (err) {
     console.error(err);
-    return Promise.resolve({ body: "", url});
+    return Promise.resolve({ body: "", url });
   }
 
   let res: Response;
@@ -220,12 +226,12 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
     }).catch(console.error);
   } catch (err) {
     console.error(err);
-    return Promise.resolve({ body: "", url});
+    return Promise.resolve({ body: "", url });
   }
 
   if (!res.ok) {
     console.error(await res.text());
-    return Promise.resolve({ body: "", url});
+    return Promise.resolve({ body: "", url });
   }
 
   let body = res.ok && (await res.text());
@@ -244,7 +250,7 @@ async function sendEmail(
   email: string,
   name: string,
   txt: string,
-  htm: string,
+  htm: string
 ) {
   const auth = btoa(`api:${ENV.MAILGUN_API_KEY}`);
   const form = new FormData();
@@ -262,7 +268,7 @@ async function sendEmail(
         Authorization: `Basic ${auth}`,
       },
       body: form,
-    },
+    }
   ).catch(console.error);
 
   if (res && !res.ok) {
@@ -274,15 +280,16 @@ async function sendEmail(
   } else {
     return Promise.resolve(null);
   }
-
 }
 
 let users = [];
 
 if (args.email) {
-	users = await db.queryEntries("SELECT * FROM users WHERE email = ?", [args.email]);
+  users = await db.queryEntries("SELECT * FROM users WHERE email = ?", [
+    args.email,
+  ]);
 } else {
-	users = await db.queryEntries("SELECT * FROM users");
+  users = await db.queryEntries("SELECT * FROM users");
 }
 
 console.log(users);
@@ -294,7 +301,7 @@ for (const user of users) {
 
   const searches = await db.queryEntries(
     "SELECT * from searches WHERE user_id = ? AND type = 'job'",
-    [user.id as QueryParameter],
+    [user.id as QueryParameter]
   );
 
   for (const search of searches as RowObject[]) {
@@ -303,11 +310,11 @@ for (const user of users) {
 
     const positive = await db.queryEntries(
       "SELECT * from positive WHERE search_id = ?",
-      [search.id as QueryParameter],
+      [search.id as QueryParameter]
     );
     const negative = await db.queryEntries(
       "SELECT * from negative WHERE search_id = ?",
-      [search.id as QueryParameter],
+      [search.id as QueryParameter]
     );
 
     for (const site of sites) {
@@ -339,9 +346,14 @@ for (const user of users) {
       html += htm;
     }
 
-		// skip empty emails
-		if (text.trim().length && html.trim().length) {
-			await sendEmail(<string>user.email, <string>search.name, text, html).catch(console.error);
-		}
+    // skip empty emails
+    if (text.trim().length && html.trim().length) {
+      await sendEmail(
+        <string>user.email,
+        <string>search.name,
+        text,
+        html
+      ).catch(console.error);
+    }
   }
 }
