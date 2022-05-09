@@ -60,7 +60,8 @@ class Controller {
     await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
     await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
 
-    context.response.status = 204;
+    context.response.status = 200;
+    context.response.body = { message: "Job has been deleted" };
   }
 
   async getMyJobs(context: any) {
