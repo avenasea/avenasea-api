@@ -60,7 +60,7 @@ async function getSerps(q: string): Promise<any> {
     const res = await fetch(
       `https://api.scaleserp.com/search?api_key=${ENV.SCALESERP_API_KEY}&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
       {
-        client,
+        // client,
         headers: {
           "User-Agent": UA,
         },
