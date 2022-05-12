@@ -1,7 +1,7 @@
 export const ats = [
 	"inurl:lever.co",
   "inurl:workable.com",
-  "inurl:greenhouse.io",
+  'inurl:greenhouse.io -title:"jobs at"',
   "inurl:jobvite.com",
   "inurl:recruiterbox.com",
   "angel.co/company+inurl:/jobs",
