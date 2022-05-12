@@ -68,9 +68,9 @@ class Users {
   static async findAll() {
     const users = db.queryEntries(
       `
-      SELECT u.username, u.created_at, u.email, u.phone ,s.total
+      SELECT u.username, u.created_at, u.email, u.phone, s.total
         FROM users u
-        INNER JOIN (
+        LEFT JOIN (
             SELECT count(*) as total, user_id
             FROM searches 
             GROUP BY user_id
