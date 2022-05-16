@@ -1,10 +1,10 @@
-import { db } from "../db.ts";
+import DB from "../db.ts";
 
 class Base {
   constructor() {}
 
   get db() {
-    return db;
+    return new DB("database.sqlite");
   }
 
   destroy() {
