@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+import Base from "./_base.ts";
 
 interface UpdateOrInsertParams {
   userID: string;
@@ -10,9 +10,13 @@ interface UpdateOrInsertParams {
   cancelAtPeriodEnd: boolean | number;
 }
 
-class Billing {
-  static async find(userID: number) {
-    const query = db.prepareQuery<any[]>(`
+class Billing extends Base {
+  constructor() {
+    super();
+  }
+
+  async find(userID: number) {
+    const query = this.db.prepareQuery<any[]>(`
       SELECT
       *
       FROM billing WHERE user_id = :userID`);
@@ -20,8 +24,8 @@ class Billing {
     return await query.oneEntry({ userID });
   }
 
-  static async findAll() {
-    const query = db.prepareQuery<any[]>(`
+  async findAll() {
+    const query = await this.db.prepareQuery<any[]>(`
       SELECT
       *
       FROM billing`);
@@ -29,7 +33,7 @@ class Billing {
     return await query.allEntries();
   }
 
-  static async insert(
+  async insert(
     userID: string,
     status: string,
     stripeSubscriptionID: string,
@@ -37,7 +41,7 @@ class Billing {
     paymentType: string,
     planID: string
   ) {
-    const query = db.query<any[]>(
+    const query = await this.db.query<any[]>(
       `
         INSERT INTO billing (
           user_id,
@@ -53,7 +57,7 @@ class Billing {
     return await query;
   }
 
-  static async updateOrInsert({
+  async updateOrInsert({
     userID,
     status,
     stripeSubscriptionID,
@@ -62,7 +66,7 @@ class Billing {
     planID,
     cancelAtPeriodEnd,
   }: UpdateOrInsertParams) {
-    const query1 = await db.query<any[]>(
+    const query1 = await this.db.query<any[]>(
       `
       SELECT
       *
@@ -71,7 +75,7 @@ class Billing {
     );
     if (query1.length > 0) {
       console.log("updating");
-      return await db.query<any[]>(
+      return await this.db.query<any[]>(
         `
         UPDATE billing
         SET
@@ -93,7 +97,7 @@ class Billing {
         ]
       );
     } else {
-      return await db.query<any[]>(
+      return await this.db.query<any[]>(
         `
         INSERT INTO billing (
           user_id,
@@ -118,4 +122,4 @@ class Billing {
   }
 }
 
-export default Billing;
+export default new Billing();

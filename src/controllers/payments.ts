@@ -1,10 +1,10 @@
-import { db } from "../db.ts";
 import Users from "../models/users.ts";
 import Plans from "../models/plans.ts";
 import Billing from "../models/billing.ts";
 import { config, Stripe } from "../deps.ts";
 import verifyStripeWebhook from "../utils/verifyStripeWebhook.ts";
 import verifyCoinpaymentsWebhook from "../utils/verifyCoinpaymentsWebhook.ts";
+import Base from "./_base.ts";
 
 const ENV = config();
 
@@ -13,7 +13,11 @@ const stripe = new Stripe(ENV.STRIPE_SK, {
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-class Controller {
+class Controller extends Base {
+  constructor() {
+    super();
+  }
+
   async createSubscription(context: any) {
     const user: any = await Users.find(context.state.user.id);
     const { planID } = JSON.parse(await context.request.body().value);
@@ -28,7 +32,7 @@ class Controller {
           email: user.email,
         });
         user.stripe_customer_id = customer.id;
-        await db.query<any[]>(
+        await this.db.query<any[]>(
           `UPDATE users SET
            updated_at = ?,
            stripe_customer_id = ?

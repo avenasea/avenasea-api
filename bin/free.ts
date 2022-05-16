@@ -14,6 +14,7 @@ const { email, all, all_not_subscribed } = parse(Deno.args);
 if (email) {
   const user: any = await Users.findByEmail(email);
   if (!user) throw "user not found";
+	console.log(user);
 
   await Billing.updateOrInsert({
     userID: user.id,

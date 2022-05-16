@@ -1,3 +1,9 @@
-class Searches {}
+import Base from "./_base.ts";
 
-export default Searches;
+class Searches extends Base {
+  constructor() {
+    super();
+  }
+}
+
+export default new Searches();

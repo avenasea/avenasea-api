@@ -1,8 +1,12 @@
 // import Searches from "../models/searches.ts";
-import { db } from "../db.ts";
 import Users from "../models/users.ts";
+import Base from "./_base.ts";
 
-class Controller {
+class Controller extends Base {
+  constructor() {
+    super();
+  }
+
   async post(context: any) {
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
@@ -11,7 +15,7 @@ class Controller {
     const search_id = crypto.randomUUID();
 
     // insert name of search
-    await db.query(
+    await this.db.query(
       "INSERT INTO searches (id, user_id, name, created_at, updated_at, type) VALUES (?, ?, ?, ?, ?, ?)",
       [
         search_id,
@@ -25,7 +29,7 @@ class Controller {
 
     // add positive keywords
     for (let word of positive) {
-      await db.query(
+      await this.db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
@@ -33,7 +37,7 @@ class Controller {
 
     // add negative keywords
     for (let word of negative) {
-      await db.query(
+      await this.db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
@@ -50,9 +54,9 @@ class Controller {
   async delete(context: any) {
     const id = context.params.id;
 
-    await db.query("DELETE FROM searches WHERE id = ?", [id]);
-    await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
-    await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
+    await this.db.query("DELETE FROM searches WHERE id = ?", [id]);
+    await this.db.query("DELETE FROM positive WHERE search_id = ?", [id]);
+    await this.db.query("DELETE FROM negative WHERE search_id = ?", [id]);
 
     context.response.status = 204;
   }
@@ -60,7 +64,7 @@ class Controller {
   async getAll(context: any) {
     const id = context.state.user.id;
     const type = context.request.url.searchParams.get("type") || "job";
-    const all = await db.queryEntries(
+    const all = await this.db.queryEntries(
       "SELECT * FROM searches WHERE user_id = ? AND type = ?",
       [id, type]
     );
@@ -77,11 +81,11 @@ class Controller {
     const id = context.state.user.id;
     const search_id = context.params.id;
     console.log(id, search_id);
-    const positive = await db.queryEntries(
+    const positive = await this.db.queryEntries(
       `SELECT * FROM positive WHERE search_id = ?`,
       [search_id]
     );
-    const negative = await db.queryEntries(
+    const negative = await this.db.queryEntries(
       `SELECT * FROM negative WHERE search_id = ?`,
       [search_id]
     );
@@ -102,7 +106,7 @@ class Controller {
     const args = [].concat(pWords, nWords, id);
     console.log("args", args);
     /*
-    const searches = await db.queryEntries(
+    const searches = await this.db.queryEntries(
       `SELECT s.* FROM searches s, positive p, negative n
       INNER JOIN positive ON s.id = positive.search_id
       INNER JOIN negative ON s.id = negative.search_id
@@ -112,7 +116,7 @@ class Controller {
     );
 
        */
-    let searches = await db.queryEntries(
+    let searches = await this.db.queryEntries(
       `SELECT s.*
         FROM searches s
         WHERE EXISTS (SELECT 1 FROM positive p WHERE p.word IN (${pIn}) AND p.search_id = s.id)
@@ -135,7 +139,7 @@ class Controller {
 
     console.log("searches: ", searches);
     /*
-    const searches = db.queryEntries(`
+    const searches = this.db.queryEntries(`
       SELECT s.*,
         p.word as posWord,
         n.word as negWord
@@ -156,19 +160,19 @@ class Controller {
     const id = context.state.user.id;
     const search_id = context.params.id;
     let data =
-      (await db
+      (await this.db
         .queryEntries("SELECT * FROM searches WHERE user_id = ? AND id = ?", [
           id,
           search_id,
         ])
         .pop()) || {};
 
-    const positive = await db.queryEntries(
+    const positive = await this.db.queryEntries(
       "SELECT word FROM positive WHERE search_id = ?",
       [search_id]
     );
 
-    const negative = await db.queryEntries(
+    const negative = await this.db.queryEntries(
       "SELECT word FROM negative WHERE search_id = ?",
       [search_id]
     );
@@ -186,26 +190,30 @@ class Controller {
     const search_id = context.params.id;
 
     // insert name of search
-    await db.query(
+    await this.db.query(
       "UPDATE searches SET name = ?, updated_at = ?, type = ? WHERE id = ?",
       [name, new Date().toISOString(), type, search_id]
     );
 
     // add positive keywords
-    await db.query("DELETE from positive WHERE search_id = ?", [search_id]);
+    await this.db.query("DELETE from positive WHERE search_id = ?", [
+      search_id,
+    ]);
 
     for (let word of positive) {
-      await db.query(
+      await this.db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
     }
 
     // add negative keywords
-    await db.query("DELETE from negative WHERE search_id = ?", [search_id]);
+    await this.db.query("DELETE from negative WHERE search_id = ?", [
+      search_id,
+    ]);
 
     for (let word of negative) {
-      await db.query(
+      await this.db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
       );
