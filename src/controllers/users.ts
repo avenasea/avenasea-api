@@ -26,29 +26,29 @@ class Controller extends Base {
 
     // todo:
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
-    const hashedPassword = await Users.hashPassword(body.password);
+    const hashedPassword = await new Users().hashPassword(body.password);
     const user = await this.db.query<any[]>(
       "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
       [
-        Users.getRandomId(),
+        new Users().getRandomId(),
         body.email.toLowerCase(),
         body.username.toLowerCase(),
         hashedPassword,
-        Users.getCurrentTime(),
-        Users.getCurrentTime(),
+        new Users().getCurrentTime(),
+        new Users().getCurrentTime(),
         body.contactme,
         body.phone,
         body.location,
       ]
     );
 
-    console.log("user registered! ", body.email, Users.getCurrentTime());
+    console.log("user registered! ", body.email, new Users().getCurrentTime());
     context.response.body = { message: "User created" };
   }
 
   async update(context: any) {
     const id = context.state.user.id;
-    const user = await Users.find(id);
+    const user = await new Users().find(id);
 
     if (!user) {
       context.response.status = 400;
@@ -94,7 +94,7 @@ class Controller extends Base {
         user.username = body.newUsername.toLowerCase();
       }
 
-      const hashedPassword = await Users.hashPassword(body.newPassword);
+      const hashedPassword = await new Users().hashPassword(body.newPassword);
       await this.db.query<any[]>(
         "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
         [
@@ -102,7 +102,7 @@ class Controller extends Base {
           user.email,
           user.username,
           user.contactme,
-          Users.getCurrentTime(),
+          new Users().getCurrentTime(),
           user.phone,
           user.location,
           id,
@@ -130,7 +130,7 @@ class Controller extends Base {
         [
           user.email,
           user.username,
-          Users.getCurrentTime(),
+          new Users().getCurrentTime(),
           user.contactme,
           user.phone,
           user.location,
@@ -144,7 +144,7 @@ class Controller extends Base {
       user.email,
       user.username,
       user.phone,
-      Users.getCurrentTime()
+      new Users().getCurrentTime()
     );
 
     context.response.body = { message: "User updated" };
@@ -183,11 +183,11 @@ class Controller extends Base {
     if (comparison) {
       context.response.status = 200;
       //delete user.hashed_password;
-      const token = await Users.generateJwt(user.id);
+      const token = await new Users().generateJwt(user.id);
       delete user.hashed_password;
 
       await this.db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
-        Users.getCurrentTime(),
+        new Users().getCurrentTime(),
         user.email,
       ]);
 
@@ -201,7 +201,7 @@ class Controller extends Base {
   async getMe(context: any) {
     //get user id from jwt
     const id = context.state.user.id;
-    const user: any = await Users.find(id);
+    const user: any = await new Users().find(id);
     if (typeof user === "undefined") {
       context.response.status = 400;
       context.response.body = { message: "User not found" };
@@ -226,7 +226,7 @@ class Controller extends Base {
   async getUsername(context: any) {
     const id = context.state.user?.id;
     const username = context.params.username;
-    const user = await Users.findByUsername(username, id);
+    const user = await new Users().findByUsername(username, id);
 
     if (!user) {
       context.response.status = 400;
@@ -237,7 +237,7 @@ class Controller extends Base {
   }
 
   async getAll(context: any) {
-    const users = await Users.findAll();
+    const users = await new Users().findAll();
 
     if (!users.length) {
       context.response.status = 400;

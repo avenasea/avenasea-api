@@ -19,7 +19,7 @@ class Controller extends Base {
   }
 
   async createSubscription(context: any) {
-    const user: any = await Users.find(context.state.user.id);
+    const user: any = await new Users().find(context.state.user.id);
     const { planID } = JSON.parse(await context.request.body().value);
     const planData: any = await Plans.find(planID);
 
@@ -37,7 +37,7 @@ class Controller extends Base {
            updated_at = ?,
            stripe_customer_id = ?
         WHERE id = ?`,
-          [Users.getCurrentTime(), user.stripe_customer_id, user.id]
+          [new Users().getCurrentTime(), user.stripe_customer_id, user.id]
         );
       } catch (err) {
         console.error(err);
@@ -129,7 +129,7 @@ class Controller extends Base {
     const dataObject = parsedBody.data.object;
 
     const handlePaymentOrSubUpdate = async (dataObject: any) => {
-      const user: any = await Users.findByStripeID(dataObject.customer);
+      const user: any = await new Users().findByStripeID(dataObject.customer);
       if (!user) return;
 
       await Billing.updateOrInsert(
@@ -203,7 +203,7 @@ class Controller extends Base {
 
     // payment complete
     if (parsedBody.get("status") >= 100) {
-      const user: any = await Users.find(parsedBody.get("invoice"));
+      const user: any = await new Users().find(parsedBody.get("invoice"));
       if (!user) return;
 
       let existing: any = await Billing.find(user.id).catch(console.error);

@@ -123,4 +123,4 @@ class Users extends Base {
   }
 }
 
-export default new Users();
+export default Users;
