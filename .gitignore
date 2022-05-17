@@ -1,4 +1,5 @@
 database.sqlite
+database.sqlite-journal
 .env.local
 .env
 *.key
