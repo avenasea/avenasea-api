@@ -2,7 +2,7 @@ import { db } from "../db.ts";
 import Users from "../models/users.ts";
 
 export const checkPerms = async (userID: string, type: string) => {
-  const user: any = await new Users().find(userID);
+  const user: any = await Users.find(userID);
   if (!user) return false;
 
   // check trial

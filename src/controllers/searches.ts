@@ -171,7 +171,7 @@ class Controller extends Base {
 
     for (let search of searches) {
       const { user_id } = search as { user_id: string };
-      const user = await new Users().find(user_id);
+      const user = await Users.find(user_id);
       search.user = user;
     }
 
