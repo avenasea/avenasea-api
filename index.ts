@@ -1,5 +1,4 @@
 import { Application, config, oakCors } from "./src/deps.ts";
-import { db } from "./src/db.ts";
 import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
@@ -27,7 +26,6 @@ app.use(async (ctx, next) => {
   await next();
   const ms = Date.now() - start;
   ctx.response.headers.set("X-Response-Time", `${ms}ms`);
-  db.close();
 });
 
 app.use(oakCors());

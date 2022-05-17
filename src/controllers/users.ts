@@ -1,20 +1,15 @@
 import { bcrypt } from "../deps.ts";
 import Users from "../models/users.ts";
-import Base from "./_base.ts";
+import { db } from "../db.ts";
 
-class Controller extends Base {
-  constructor() {
-    super();
-  }
-
+class Controller {
   async register(context: any) {
     const body = JSON.parse(await context.request.body().value);
-    const existing = await this.db.query(
-      "SELECT * FROM users WHERE email = ?",
-      [body.email]
-    );
+    const existing = await db.query("SELECT * FROM users WHERE email = ?", [
+      body.email,
+    ]);
 
-    const userNameExisting = await this.db.query(
+    const userNameExisting = await db.query(
       "SELECT * FROM users WHERE username = ?",
       [body.username]
     );
@@ -27,7 +22,7 @@ class Controller extends Base {
     // todo:
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
     const hashedPassword = await Users.hashPassword(body.password);
-    const user = await this.db.query<any[]>(
+    const user = await db.query<any[]>(
       "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
       [
         Users.getRandomId(),
@@ -57,10 +52,9 @@ class Controller extends Base {
 
     const body = JSON.parse(await context.request.body().value);
     if (body.newEmail) {
-      const existing = await this.db.query(
-        "SELECT * FROM users WHERE email = ?",
-        [body.newEmail]
-      );
+      const existing = await db.query("SELECT * FROM users WHERE email = ?", [
+        body.newEmail,
+      ]);
 
       if (existing.length) {
         context.response.status = 400;
@@ -69,7 +63,7 @@ class Controller extends Base {
     }
 
     if (body.newUsername) {
-      const userNameExisting = await this.db.query(
+      const userNameExisting = await db.query(
         "SELECT * FROM users WHERE username = ?",
         [body.newUsername]
       );
@@ -95,7 +89,7 @@ class Controller extends Base {
       }
 
       const hashedPassword = await Users.hashPassword(body.newPassword);
-      await this.db.query<any[]>(
+      await db.query<any[]>(
         "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
         [
           hashedPassword,
@@ -118,7 +112,7 @@ class Controller extends Base {
         user.username = body.newUsername.toLowerCase();
       }
 
-      await this.db.query<any[]>(
+      await db.query<any[]>(
         `UPDATE users
            SET email = ?,
            username = ?,
@@ -155,7 +149,7 @@ class Controller extends Base {
     let user: any;
 
     try {
-      const query = this.db.prepareQuery<unknown[]>(
+      const query = db.prepareQuery<unknown[]>(
         `SELECT
         id,
         email,
@@ -186,7 +180,7 @@ class Controller extends Base {
       const token = await Users.generateJwt(user.id);
       delete user.hashed_password;
 
-      await this.db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
+      await db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
         Users.getCurrentTime(),
         user.email,
       ]);
@@ -213,7 +207,7 @@ class Controller extends Base {
         user.renewal_date <= Math.floor(Date.now() / 1000)
       ) {
         user.status = "canceled";
-        this.db.query("UPDATE billing SET status = ? WHERE user_id = ?", [
+        db.query("UPDATE billing SET status = ? WHERE user_id = ?", [
           user.status,
           id,
         ]);

@@ -1,20 +1,16 @@
-import Base from "./_base.ts";
+import { db } from "../db.ts";
 
-class Controller extends Base {
-  constructor() {
-    super();
-  }
-
+class Controller {
   async stats(context: any) {
-    const totalUsers = await this.db.queryEntries(
+    const totalUsers = await db.queryEntries(
       "SELECT count(*) as total from users"
     );
 
-    const totalSearches = await this.db.queryEntries(
+    const totalSearches = await db.queryEntries(
       "SELECT count(*) as total from searches"
     );
 
-    const totalJobs = await this.db.queryEntries(
+    const totalJobs = await db.queryEntries(
       "SELECT count(*) as total from jobs"
     );
 
@@ -31,7 +27,7 @@ class Controller extends Base {
   }
 
   async tags(context: any) {
-    const tags = await this.db.queryEntries(
+    const tags = await db.queryEntries(
       "SELECT word, COUNT(word) as count from positive GROUP BY word ORDER BY count DESC LIMIT 50"
     );
 
@@ -44,7 +40,7 @@ class Controller extends Base {
 
   async jobTags(context: any) {
     console.log("jobTags");
-    const tags = await this.db.queryEntries(
+    const tags = await db.queryEntries(
       `SELECT p.word, COUNT(p.word) as count from positive as p INNER JOIN jobs j ON j.id = p.search_id GROUP BY word ORDER BY count DESC LIMIT 50`
     );
 

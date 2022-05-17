@@ -1,12 +1,8 @@
 // import Searches from "../models/searches.ts";
+import { db } from "../db.ts";
 import Users from "../models/users.ts";
-import Base from "./_base.ts";
 
-class Controller extends Base {
-  constructor() {
-    super();
-  }
-
+class Controller {
   async post(context: any) {
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
@@ -15,7 +11,7 @@ class Controller extends Base {
     const job_id = crypto.randomUUID();
 
     // insert name of search
-    await this.db.query(
+    await db.query(
       "INSERT INTO jobs (id, user_id, title, created_at, updated_at, type, pay, contact, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         job_id,
@@ -32,7 +28,7 @@ class Controller extends Base {
 
     // add positive keywords
     for (let word of positive) {
-      await this.db.query(
+      await db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
       );
@@ -40,7 +36,7 @@ class Controller extends Base {
 
     // add negative keywords
     for (let word of negative) {
-      await this.db.query(
+      await db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
       );
@@ -60,9 +56,9 @@ class Controller extends Base {
   async delete(context: any) {
     const id = context.params.id;
 
-    await this.db.query("DELETE FROM jobs WHERE id = ?", [id]);
-    await this.db.query("DELETE FROM positive WHERE search_id = ?", [id]);
-    await this.db.query("DELETE FROM negative WHERE search_id = ?", [id]);
+    await db.query("DELETE FROM jobs WHERE id = ?", [id]);
+    await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
+    await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
 
     context.response.status = 200;
     context.response.body = { message: "Job has been deleted" };
@@ -70,16 +66,15 @@ class Controller extends Base {
 
   async getMyJobs(context: any) {
     const id = context.state.user.id;
-    const all = await this.db.queryEntries(
-      "SELECT * FROM jobs WHERE user_id = ?",
-      [id]
-    );
+    const all = await db.queryEntries("SELECT * FROM jobs WHERE user_id = ?", [
+      id,
+    ]);
 
     context.response.body = all;
   }
 
   async getAll(context: any) {
-    const all = await this.db.queryEntries(`
+    const all = await db.queryEntries(`
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u ON j.user_id = u.id ORDER BY j.created_at DESC
     `);
@@ -90,7 +85,7 @@ class Controller extends Base {
   async getByTag(context: any) {
     const tag = context.params.tag.replace(/-+/g, " ");
 
-    const all = await this.db.queryEntries(
+    const all = await db.queryEntries(
       `
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u, positive p ON j.user_id = u.id AND j.id = p.search_id WHERE p.word = ? ORDER BY j.created_at DESC
@@ -104,7 +99,7 @@ class Controller extends Base {
   async getByUsername(context: any) {
     const { username } = context.params;
 
-    const all = await this.db.queryEntries(
+    const all = await db.queryEntries(
       `
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u ON j.user_id = u.id  WHERE u.username = ? ORDER BY j.created_at DESC
@@ -118,19 +113,19 @@ class Controller extends Base {
     // const id = context.state.user.id;
     const job_id = context.params.id;
     let data =
-      (await this.db
+      (await db
         .queryEntries(
           "SELECT j.*, u.username FROM jobs as j INNER JOIN users u ON j.user_id = u.id WHERE j.id = ?",
           [job_id]
         )
         .pop()) || {};
 
-    const positive = await this.db.queryEntries(
+    const positive = await db.queryEntries(
       "SELECT word FROM positive WHERE search_id = ?",
       [job_id]
     );
 
-    const negative = await this.db.queryEntries(
+    const negative = await db.queryEntries(
       "SELECT word FROM negative WHERE search_id = ?",
       [job_id]
     );
@@ -148,26 +143,26 @@ class Controller extends Base {
     const job_id = context.params.id;
 
     // insert name of search
-    await this.db.query(
+    await db.query(
       "UPDATE jobs SET title = ?, type = ?, contact = ?, pay = ?, description = ?, updated_at = ? WHERE id = ?",
       [title, type, contact, pay, description, new Date().toISOString(), job_id]
     );
 
     // add positive keywords
-    await this.db.query("DELETE from positive WHERE search_id = ?", [job_id]);
+    await db.query("DELETE from positive WHERE search_id = ?", [job_id]);
 
     for (let word of positive) {
-      await this.db.query(
+      await db.query(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
       );
     }
 
     // add negative keywords
-    await this.db.query("DELETE from negative WHERE search_id = ?", [job_id]);
+    await db.query("DELETE from negative WHERE search_id = ?", [job_id]);
 
     for (let word of negative) {
-      await this.db.query(
+      await db.query(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
         [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
       );

@@ -1,27 +1,23 @@
 import { bcrypt, create, getNumericDate } from "../deps.ts";
 import { JwtConfig } from "../middleware/jwt.ts";
-import Base from "./_base.ts";
+import { db } from "../db.ts";
 
-class Users extends Base {
-  constructor() {
-    super();
-  }
-
-  getRandomId() {
+class Users {
+  static getRandomId() {
     return crypto.randomUUID();
   }
 
-  getCurrentTime() {
+  static getCurrentTime() {
     return new Date().toISOString();
   }
 
-  async hashPassword(password: string) {
+  static async hashPassword(password: string) {
     const salt = await bcrypt.genSalt(8);
     return bcrypt.hash(password, salt);
   }
 
-  async find(id: string) {
-    const query = this.db.prepareQuery<any[]>(
+  static async find(id: string) {
+    const query = db.prepareQuery<any[]>(
       `SELECT
       users.id AS id,
       email,
@@ -49,8 +45,8 @@ class Users extends Base {
     return await query.oneEntry({ id });
   }
 
-  async findByUsername(username: string, id: string) {
-    const query = this.db.prepareQuery<any[]>(
+  static async findByUsername(username: string, id: string) {
+    const query = db.prepareQuery<any[]>(
       "SELECT username, email, created_at, contactme, phone, location, stripe_customer_id FROM users WHERE username = :username"
     );
 
@@ -69,8 +65,8 @@ class Users extends Base {
     }
   }
 
-  async findAll() {
-    const users = this.db.queryEntries(
+  static async findAll() {
+    const users = db.queryEntries(
       `
       SELECT u.username, u.created_at, u.email, u.phone, s.total
         FROM users u
@@ -86,8 +82,8 @@ class Users extends Base {
     return users;
   }
 
-  async findByStripeID(stripeCustomerID: string) {
-    const query = this.db.prepareQuery<any[]>(
+  static async findByStripeID(stripeCustomerID: string) {
+    const query = db.prepareQuery<any[]>(
       "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE stripe_customer_id = :stripeCustomerID"
     );
 
@@ -99,8 +95,8 @@ class Users extends Base {
     }
   }
 
-  async findByEmail(email: string) {
-    const query = this.db.prepareQuery<any[]>(
+  static async findByEmail(email: string) {
+    const query = db.prepareQuery<any[]>(
       "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE email = :email"
     );
 
@@ -112,7 +108,7 @@ class Users extends Base {
     }
   }
 
-  generateJwt(id: string) {
+  static generateJwt(id: string) {
     // Create the payload with the expiration date (token have an expiry date) and the id of current user (you can add that you want)
     const payload = {
       id,
@@ -123,4 +119,4 @@ class Users extends Base {
   }
 }
 
-export default new Users();
+export default Users;

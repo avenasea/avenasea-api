@@ -1,12 +1,8 @@
-import Base from "./_base.ts";
+import { db } from "../db.ts";
 
-class Plans extends Base {
-  constructor() {
-    super();
-  }
-  
-  async find(id: number) {
-    const query = this.db.prepareQuery<any[]>(`
+class Users {
+  static async find(id: number) {
+    const query = db.prepareQuery<any[]>(`
       SELECT
       *
       FROM plans WHERE id = :id`);
@@ -14,8 +10,8 @@ class Plans extends Base {
     return await query.oneEntry({ id });
   }
 
-  async findAll() {
-    const query = this.db.prepareQuery<any[]>(`
+  static async findAll() {
+    const query = db.prepareQuery<any[]>(`
       SELECT
       *
       FROM plans`);
@@ -24,4 +20,4 @@ class Plans extends Base {
   }
 }
 
-export default new Plans();
+export default Users;

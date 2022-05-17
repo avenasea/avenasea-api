@@ -1,4 +1,4 @@
-j// deno run --allow-write generateKey.ts
+// deno run --allow-write generateKey.ts
 
 const key = await crypto.subtle.generateKey(
   { name: "HMAC", hash: "SHA-512" },

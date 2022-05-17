@@ -1,4 +1,4 @@
-import Base from "./_base.ts";
+import { db } from "../db.ts";
 
 interface UpdateOrInsertParams {
   userID: string;
@@ -10,13 +10,9 @@ interface UpdateOrInsertParams {
   cancelAtPeriodEnd: boolean | number;
 }
 
-class Billing extends Base {
-  constructor() {
-    super();
-  }
-
-  async find(userID: number) {
-    const query = this.db.prepareQuery<any[]>(`
+class Billing {
+  static async find(userID: number) {
+    const query = db.prepareQuery<any[]>(`
       SELECT
       *
       FROM billing WHERE user_id = :userID`);
@@ -24,8 +20,8 @@ class Billing extends Base {
     return await query.oneEntry({ userID });
   }
 
-  async findAll() {
-    const query = await this.db.prepareQuery<any[]>(`
+  static async findAll() {
+    const query = db.prepareQuery<any[]>(`
       SELECT
       *
       FROM billing`);
@@ -33,7 +29,7 @@ class Billing extends Base {
     return await query.allEntries();
   }
 
-  async insert(
+  static async insert(
     userID: string,
     status: string,
     stripeSubscriptionID: string,
@@ -41,7 +37,7 @@ class Billing extends Base {
     paymentType: string,
     planID: string
   ) {
-    const query = await this.db.query<any[]>(
+    const query = db.query<any[]>(
       `
         INSERT INTO billing (
           user_id,
@@ -57,7 +53,7 @@ class Billing extends Base {
     return await query;
   }
 
-  async updateOrInsert({
+  static async updateOrInsert({
     userID,
     status,
     stripeSubscriptionID,
@@ -66,7 +62,7 @@ class Billing extends Base {
     planID,
     cancelAtPeriodEnd,
   }: UpdateOrInsertParams) {
-    const query1 = await this.db.query<any[]>(
+    const query1 = await db.query<any[]>(
       `
       SELECT
       *
@@ -75,7 +71,7 @@ class Billing extends Base {
     );
     if (query1.length > 0) {
       console.log("updating");
-      return await this.db.query<any[]>(
+      return await db.query<any[]>(
         `
         UPDATE billing
         SET
@@ -97,7 +93,7 @@ class Billing extends Base {
         ]
       );
     } else {
-      return await this.db.query<any[]>(
+      return await db.query<any[]>(
         `
         INSERT INTO billing (
           user_id,
@@ -122,4 +118,4 @@ class Billing extends Base {
   }
 }
 
-export default new Billing();
+export default Billing;
