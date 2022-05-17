@@ -26,6 +26,5 @@ export const checkPerms = async (userID: string, type: string) => {
 
   const currentCount = all.filter((job) => job.type == type).length;
 
-  db.close();
   if (currentCount + 1 > maxProfiles) return false;
 };
