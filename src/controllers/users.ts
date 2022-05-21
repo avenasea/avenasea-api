@@ -192,6 +192,15 @@ class Controller {
         user,
         token,
       });
+    } else {
+      console.error(
+        "Incorrect login: ",
+        // body.password,
+        user.hashed_password,
+        comparison
+      );
+      context.response.status = 400;
+      context.response.body = { message: "Incorrect login" };
     }
   }
 
