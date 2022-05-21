@@ -14,13 +14,14 @@ const port = parseInt(env.PORT);
 const app = new Application();
 
 // Db
+/*
 app.use(async (ctx, next) => {
-  // do whatever checks to determine the user ID
-  // ctx.state.db = db;
+  ctx.state.db = db;
   await next();
-  // ctx.state.db.close();
-  // delete ctx.state.db; // cleanup
+  ctx.state.db.close();
+  delete ctx.state.db; // cleanup
 });
+*/
 
 // Logger
 app.use(async (ctx, next) => {
