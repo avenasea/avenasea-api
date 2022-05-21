@@ -46,6 +46,8 @@ class Users {
   }
 
   static async findByUsername(username: string, id: string) {
+    console.log("username: ", username, "id: ", id);
+
     const query = db.prepareQuery<any[]>(
       "SELECT username, email, created_at, contactme, phone, location, stripe_customer_id FROM users WHERE username = :username"
     );

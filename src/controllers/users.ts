@@ -4,6 +4,7 @@ import { db } from "../db.ts";
 
 class Controller {
   async register(context: any) {
+    // const db: any = context.state.db;
     const body = JSON.parse(await context.request.body().value);
     const existing = await db.query("SELECT * FROM users WHERE email = ?", [
       body.email,
@@ -22,7 +23,7 @@ class Controller {
     // todo:
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
     const hashedPassword = await Users.hashPassword(body.password);
-    const user = await db.query<any[]>(
+    const user = await db.query(
       "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
       [
         Users.getRandomId(),
@@ -42,6 +43,7 @@ class Controller {
   }
 
   async update(context: any) {
+    // const db: any = context.state.db;
     const id = context.state.user.id;
     const user = await Users.find(id);
 
@@ -89,7 +91,7 @@ class Controller {
       }
 
       const hashedPassword = await Users.hashPassword(body.newPassword);
-      await db.query<any[]>(
+      await db.query(
         "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
         [
           hashedPassword,
@@ -112,7 +114,7 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
-      await db.query<any[]>(
+      await db.query(
         `UPDATE users
            SET email = ?,
            username = ?,
@@ -145,11 +147,12 @@ class Controller {
   }
 
   async login(context: any) {
+    // const db: any = context.state.db;
     const body = JSON.parse(await context.request.body().value);
     let user: any;
 
     try {
-      const query = db.prepareQuery<unknown[]>(
+      const query = db.prepareQuery(
         `SELECT
         id,
         email,
@@ -194,6 +197,7 @@ class Controller {
 
   async getMe(context: any) {
     //get user id from jwt
+    // const db: any = context.state.db;
     const id = context.state.user.id;
     const user: any = await Users.find(id);
     if (typeof user === "undefined") {
@@ -218,6 +222,7 @@ class Controller {
   }
 
   async getUsername(context: any) {
+    // const db: any = context.state.db;
     const id = context.state.user?.id;
     const username = context.params.username;
     const user = await Users.findByUsername(username, id);
@@ -231,6 +236,7 @@ class Controller {
   }
 
   async getAll(context: any) {
+    // const db: any = context.state.db;
     const users = await Users.findAll();
 
     if (!users.length) {
