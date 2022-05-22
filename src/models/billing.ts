@@ -11,7 +11,7 @@ interface UpdateOrInsertParams {
 }
 
 class Billing {
-  static async find(userID: number) {
+  static async find(userID: string) {
     const query = db.prepareQuery<any[]>(`
       SELECT
       *

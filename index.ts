@@ -13,16 +13,6 @@ const env = Deno.env.toObject();
 const port = parseInt(env.PORT);
 const app = new Application();
 
-// Db
-/*
-app.use(async (ctx, next) => {
-  ctx.state.db = db;
-  await next();
-  ctx.state.db.close();
-  delete ctx.state.db; // cleanup
-});
-*/
-
 // Logger
 app.use(async (ctx, next) => {
   await next();
