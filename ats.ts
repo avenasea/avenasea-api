@@ -1,10 +1,10 @@
 export const ats = [
 	"inurl:lever.co",
-  "inurl:workable.com",
+  'inurl:workable.com "United States"',
   'inurl:greenhouse.io -intitle:"jobs at"',
   "inurl:jobvite.com",
   "inurl:recruiterbox.com",
-  "angel.co/company+inurl:/jobs",
+  "inurl:angel.co/company inurl:/jobs",
   // "inurl:linkedin.com/jobs/view/",
   "inurl:nodesk.co/remote-jobs",
   "inurl:recruitee.com/o",
