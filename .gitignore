@@ -1,0 +1,7 @@
+database.sqlite
+.env.local
+.env
+*.key
+./api
+jwk.json
+.DS_Store
