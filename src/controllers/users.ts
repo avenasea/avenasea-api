@@ -151,6 +151,12 @@ class Controller {
     const body = JSON.parse(await context.request.body().value);
     let user: any;
 
+    if (!body.email || !body.password) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
+    }
+
     try {
       const query = db.prepareQuery(
         `SELECT
@@ -166,6 +172,12 @@ class Controller {
       query.finalize();
     } catch (err) {
       console.error(err);
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
+    }
+
+    if (!user.email) {
       context.response.status = 400;
       context.response.body = { message: "User not found" };
       return;
