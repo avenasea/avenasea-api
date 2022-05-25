@@ -23,4 +23,5 @@ cd $HOME/www/${name}/${project}
 deno upgrade
 deno run -A --unstable https://deno.land/x/nessie/cli.ts migrate
 
+echo $HOST_PASS | sudo -S systemctl daemon-reload
 echo $HOST_PASS | sudo -S systemctl restart ${META_SERVICE}
