@@ -1,10 +1,10 @@
 import { bcrypt } from "../deps.ts";
 import Users from "../models/users.ts";
-import { db } from "../db.ts";
+// import { db } from "../db.ts";
 
 class Controller {
   async register(context: any) {
-    // const db: any = context.state.db;
+    const db = context.state.db;
     const body = JSON.parse(await context.request.body().value);
     const existing = await db.query("SELECT * FROM users WHERE email = ?", [
       body.email,
@@ -43,7 +43,7 @@ class Controller {
   }
 
   async update(context: any) {
-    // const db: any = context.state.db;
+    const db = context.state.db;
     const id = context.state.user.id;
     const user = await Users.find(id);
 
@@ -147,7 +147,7 @@ class Controller {
   }
 
   async login(context: any) {
-    // const db: any = context.state.db;
+    const db = context.state.db;
     const body = JSON.parse(await context.request.body().value);
     let user: any;
 
@@ -179,7 +179,6 @@ class Controller {
 
     if (comparison) {
       context.response.status = 200;
-      //delete user.hashed_password;
       const token = await Users.generateJwt(user.id);
       delete user.hashed_password;
 
@@ -206,7 +205,7 @@ class Controller {
 
   async getMe(context: any) {
     //get user id from jwt
-    // const db: any = context.state.db;
+    const db = context.state.db;
     const id = context.state.user.id;
     const user: any = await Users.find(id);
     if (typeof user === "undefined") {
@@ -231,7 +230,7 @@ class Controller {
   }
 
   async getUsername(context: any) {
-    // const db: any = context.state.db;
+    const db = context.state.db;
     const id = context.state.user?.id;
     const username = context.params.username;
     const user = await Users.findByUsername(username, id);
@@ -245,7 +244,7 @@ class Controller {
   }
 
   async getAll(context: any) {
-    // const db: any = context.state.db;
+    const db = context.state.db;
     const users = await Users.findAll();
 
     if (!users.length) {

@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+// import { db } from "../db.ts";
 import Users from "../models/users.ts";
 import Plans from "../models/plans.ts";
 import Billing from "../models/billing.ts";
@@ -15,6 +15,7 @@ const stripe = new Stripe(ENV.STRIPE_SK, {
 
 class Controller {
   async createSubscription(context: any) {
+    const db = context.state.db;
     const user: any = await Users.find(context.state.user.id);
     const { planID } = JSON.parse(await context.request.body().value);
     const planData: any = await Plans.find(planID);
@@ -28,7 +29,7 @@ class Controller {
           email: user.email,
         });
         user.stripe_customer_id = customer.id;
-        await db.query<any[]>(
+        await db.query(
           `UPDATE users SET
            updated_at = ?,
            stripe_customer_id = ?

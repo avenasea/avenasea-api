@@ -1,14 +1,24 @@
 // import Searches from "../models/searches.ts";
 import { db } from "../db.ts";
 import Users from "../models/users.ts";
+import { checkPerms } from "../middleware/perms.ts";
 
 class Controller {
   async post(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, name, type } = body;
     const data: any = {};
     const search_id = crypto.randomUUID();
+
+    if ((await checkPerms(id, type)) == false) {
+      context.response.status = 403;
+      context.response.body = {
+        message: "User is not a paid subscriber",
+      };
+      return;
+    }
 
     // insert name of search
     await db.query(
@@ -48,21 +58,54 @@ class Controller {
   }
 
   async delete(context: any) {
+    const db = context.state.db;
     const id = context.params.id;
 
     await db.query("DELETE FROM searches WHERE id = ?", [id]);
     await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
     await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
 
-    context.response.status = 204;
+    context.response.status = 200;
+    context.response.body = { message: "Search has been deleted" };
   }
 
   async getAll(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
     const type = context.request.url.searchParams.get("type") || "job";
     const all = await db.queryEntries(
       "SELECT * FROM searches WHERE user_id = ? AND type = ?",
       [id, type]
+    );
+
+    context.response.body = all;
+  }
+
+  async getByTag(context: any) {
+    const db = context.state.db;
+    const tag = context.params.tag.replace(/-+/g, " ");
+
+    const all = await db.queryEntries(
+      `
+        SELECT s.*, u.username FROM searches as s
+        INNER JOIN users u, positive p ON s.user_id = u.id AND s.id = p.search_id WHERE p.word = ? ORDER BY s.created_at DESC
+    `,
+      [tag]
+    );
+
+    context.response.body = all;
+  }
+
+  async getByUsername(context: any) {
+    const db = context.state.db;
+    const { username } = context.params;
+
+    const all = await db.queryEntries(
+      `
+        SELECT s.*, u.username FROM searches as s
+        INNER JOIN users u ON s.user_id = u.id WHERE u.username = ? AND s.type = 'job' ORDER BY s.created_at DESC
+    `,
+      [username]
     );
 
     context.response.body = all;
@@ -74,6 +117,7 @@ class Controller {
     // find other searches (type job) where positive and negative match
     // join on user
     // return users
+    const db = context.state.db;
     const id = context.state.user.id;
     const search_id = context.params.id;
     console.log(id, search_id);
@@ -88,16 +132,16 @@ class Controller {
     console.log("positive: ", positive, " negative: ", negative);
     let pIn = "";
     let nIn = "";
-    positive.forEach((p, i) => {
+    positive.forEach((p: any, i: any) => {
       pIn += "?" + (i < positive.length - 1 ? "," : "");
     });
 
-    negative.forEach((n, i) => {
+    negative.forEach((n: any, i: any) => {
       nIn += "?" + (i < negative.length - 1 ? "," : "");
     });
     console.log("pIn", pIn);
-    const pWords = <[]>positive.map((p) => p.word);
-    const nWords = <[]>negative.map((n) => n.word);
+    const pWords = <[]>positive.map((p: any) => p.word);
+    const nWords = <[]>negative.map((n: any) => n.word);
     console.log("pWords", pWords);
     const args = [].concat(pWords, nWords, id);
     console.log("args", args);
@@ -153,14 +197,15 @@ class Controller {
   }
 
   async getOne(context: any) {
-    const id = context.state.user.id;
+    const db = context.state.db;
+    // const id = context.state.user.id;
     const search_id = context.params.id;
     let data =
       (await db
-        .queryEntries("SELECT * FROM searches WHERE user_id = ? AND id = ?", [
-          id,
-          search_id,
-        ])
+        .queryEntries(
+          "SELECT s.*, u.username FROM searches as s INNER JOIN users u ON s.user_id = u.id WHERE s.id = ?",
+          [search_id]
+        )
         .pop()) || {};
 
     const positive = await db.queryEntries(
@@ -173,12 +218,13 @@ class Controller {
       [search_id]
     );
 
-    data.positive = positive.map((w) => w.word);
-    data.negative = negative.map((w) => w.word);
+    data.positive = positive.map((w: any) => w.word);
+    data.negative = negative.map((w: any) => w.word);
     context.response.body = data;
   }
 
   async update(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, name, type } = body;

@@ -6,12 +6,26 @@ import stats from "./src/routes/stats.ts";
 import jobs from "./src/routes/jobs.ts";
 import payments from "./src/routes/payments.ts";
 import affiliates from "./src/routes/affiliates.ts";
+import { DB, MongoClient } from "./src/db.ts";
+
+const client = new MongoClient();
 
 config({ export: true });
 //console.log(config());
 const env = Deno.env.toObject();
 const port = parseInt(env.PORT);
 const app = new Application();
+
+//Db
+app.use(async (ctx, next) => {
+  const db = new DB("database.sqlite");
+  const mongo = await client.connect("mongodb://127.0.0.1:27017");
+  ctx.state.db = db;
+  ctx.state.mongo = mongo;
+  await next();
+  ctx.state.db.close();
+  client.close();
+});
 
 // Logger
 app.use(async (ctx, next) => {
