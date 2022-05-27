@@ -1,11 +1,9 @@
-// import Searches from "../models/searches.ts";
-import { db } from "../db.ts";
 import Users from "../models/users.ts";
 import { checkPerms } from "../middleware/perms.ts";
 
 class Controller {
   async post(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, name, type } = body;
@@ -58,7 +56,7 @@ class Controller {
   }
 
   async delete(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.params.id;
 
     await db.query("DELETE FROM searches WHERE id = ?", [id]);
@@ -70,7 +68,7 @@ class Controller {
   }
 
   async getAll(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
     const type = context.request.url.searchParams.get("type") || "job";
     const all = await db.queryEntries(
@@ -82,7 +80,7 @@ class Controller {
   }
 
   async getByTag(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     const tag = context.params.tag.replace(/-+/g, " ");
 
     const all = await db.queryEntries(
@@ -97,7 +95,7 @@ class Controller {
   }
 
   async getByUsername(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     const { username } = context.params;
 
     const all = await db.queryEntries(
@@ -117,7 +115,8 @@ class Controller {
     // find other searches (type job) where positive and negative match
     // join on user
     // return users
-    const db = context.state.db;
+    const { db, mongo } = context.state;
+		const users = new Users(db, mongo);
     const id = context.state.user.id;
     const search_id = context.params.id;
     console.log(id, search_id);
@@ -168,7 +167,7 @@ class Controller {
 
     for (let search of searches) {
       const { user_id } = search as { user_id: string };
-      const user = await Users.find(user_id);
+      const user = await users.find(user_id);
       search.user = user;
     }
 
@@ -197,7 +196,7 @@ class Controller {
   }
 
   async getOne(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     // const id = context.state.user.id;
     const search_id = context.params.id;
     let data =
@@ -224,7 +223,7 @@ class Controller {
   }
 
   async update(context: any) {
-    const db = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, name, type } = body;

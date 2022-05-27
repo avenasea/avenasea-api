@@ -15,10 +15,12 @@ const stripe = new Stripe(ENV.STRIPE_SK, {
 
 class Controller {
   async createSubscription(context: any) {
-    const db = context.state.db;
-    const user: any = await Users.find(context.state.user.id);
+    const { db, mongo } = context.state;
+		const users = new Users(db, mongo);
+		const plans = new Plans(db, mongo);
+    const user: any = await users.find(context.state.user.id);
     const { planID } = JSON.parse(await context.request.body().value);
-    const planData: any = await Plans.find(planID);
+    const planData: any = await plans.find(planID);
 
     if (!user || !planData || user.status == "active")
       return (context.response.status = 500);
@@ -34,7 +36,7 @@ class Controller {
            updated_at = ?,
            stripe_customer_id = ?
         WHERE id = ?`,
-          [Users.getCurrentTime(), user.stripe_customer_id, user.id]
+          [users.getCurrentTime(), user.stripe_customer_id, user.id]
         );
       } catch (err) {
         console.error(err);
@@ -93,7 +95,9 @@ class Controller {
   }
 
   async cancelSubscription(context: any) {
-    const sub: any = await Billing.find(context.state.user.id);
+    const { db, mongo } = context.state;
+		const billing = new Billing(db, mongo);
+    const sub: any = await billing.find(context.state.user.id);
     if (sub.status == "canceled" || sub.cancel_at_period_end == true)
       return (context.response.body = {
         error: "subscription already canceled",
@@ -112,6 +116,9 @@ class Controller {
   }
 
   async webhook(context: any) {
+    const { db, mongo } = context.state;
+		const users = new Users(db, mongo);
+		const billing = new Billing(db, mongo);
     const rawBody = await context.request.body({ type: "text" }).value;
     const parsedBody = await context.request.body().value;
 
@@ -126,10 +133,10 @@ class Controller {
     const dataObject = parsedBody.data.object;
 
     const handlePaymentOrSubUpdate = async (dataObject: any) => {
-      const user: any = await Users.findByStripeID(dataObject.customer);
+      const user: any = await users.findByStripeID(dataObject.customer);
       if (!user) return;
 
-      await Billing.updateOrInsert(
+      await billing.updateOrInsert(
         dataObject.object == "subscription"
           ? {
               userID: user.id,
@@ -187,6 +194,10 @@ class Controller {
   }
 
   async coinpaymentsWebhook(context: any) {
+    const { db, mongo } = context.state;
+		const users = new Users(db, mongo);
+		const billing = new Billing(db, mongo);
+		const plans = new Plans(db, mongo);
     const rawBody = await context.request.body({ type: "text" }).value;
     const parsedBody = await context.request.body().value;
 
@@ -200,11 +211,11 @@ class Controller {
 
     // payment complete
     if (parsedBody.get("status") >= 100) {
-      const user: any = await Users.find(parsedBody.get("invoice"));
+      const user: any = await users.find(parsedBody.get("invoice"));
       if (!user) return;
 
-      let existing: any = await Billing.find(user.id).catch(console.error);
-      const planData: any = await Plans.find(parsedBody.get("item_number"));
+      let existing: any = await billing.find(user.id).catch(console.error);
+      const planData: any = await plans.find(parsedBody.get("item_number"));
 
       if (
         !existing ||
@@ -225,7 +236,7 @@ class Controller {
         renewalDate = Math.floor(startingDate.getTime() / 1000).toString();
       }
 
-      await Billing.updateOrInsert({
+      await billing.updateOrInsert({
         userID: user.id,
         status: "active",
         stripeSubscriptionID: null,

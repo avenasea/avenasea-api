@@ -1,7 +1,3 @@
-// import Searches from "../models/searches.ts";
-// import { db } from "../db.ts";
-import Users from "../models/users.ts";
-
 class Controller {
   async post(context: any) {
     const db = context.state.db;

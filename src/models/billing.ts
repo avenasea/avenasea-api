@@ -1,4 +1,4 @@
-import { db } from "../db.ts";
+import { DB, MongoDatabase } from '../deps.ts';
 
 interface UpdateOrInsertParams {
   userID: string;
@@ -11,8 +11,16 @@ interface UpdateOrInsertParams {
 }
 
 class Billing {
-  static async find(userID: string) {
-    const query = db.prepareQuery<any[]>(`
+	db: DB;
+	mongo: MongoDatabase;
+
+	constructor(db:any, mongo:any) {
+		this.db = db;
+		this.mongo = mongo;
+	}
+
+  async find(userID: string) {
+    const query = this.db.prepareQuery<any[]>(`
       SELECT
       *
       FROM billing WHERE user_id = :userID`);
@@ -20,8 +28,8 @@ class Billing {
     return await query.oneEntry({ userID });
   }
 
-  static async findAll() {
-    const query = db.prepareQuery<any[]>(`
+  async findAll() {
+    const query = this.db.prepareQuery<any[]>(`
       SELECT
       *
       FROM billing`);
@@ -29,7 +37,7 @@ class Billing {
     return await query.allEntries();
   }
 
-  static async insert(
+  async insert(
     userID: string,
     status: string,
     stripeSubscriptionID: string,
@@ -37,7 +45,7 @@ class Billing {
     paymentType: string,
     planID: string
   ) {
-    const query = db.query<any[]>(
+    const query = this.db.query<any[]>(
       `
         INSERT INTO billing (
           user_id,
@@ -53,7 +61,7 @@ class Billing {
     return await query;
   }
 
-  static async updateOrInsert({
+  async updateOrInsert({
     userID,
     status,
     stripeSubscriptionID,
@@ -62,7 +70,7 @@ class Billing {
     planID,
     cancelAtPeriodEnd,
   }: UpdateOrInsertParams) {
-    const query1 = await db.query<any[]>(
+    const query1 = await this.db.query<any[]>(
       `
       SELECT
       *
@@ -71,7 +79,7 @@ class Billing {
     );
     if (query1.length > 0) {
       console.log("updating");
-      return await db.query<any[]>(
+      return await this.db.query<any[]>(
         `
         UPDATE billing
         SET
@@ -93,7 +101,7 @@ class Billing {
         ]
       );
     } else {
-      return await db.query<any[]>(
+      return await this.db.query<any[]>(
         `
         INSERT INTO billing (
           user_id,
