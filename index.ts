@@ -4,6 +4,8 @@ import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import stats from "./src/routes/stats.ts";
 import jobs from "./src/routes/jobs.ts";
+// import formatError from "./src/utils/formatError.ts";
+
 import payments from "./src/routes/payments.ts";
 //import affiliates from "./src/routes/affiliates.ts";
 import { DB, MongoClient } from "./src/db.ts";
