@@ -1,15 +1,15 @@
 import { bcrypt, create, getNumericDate } from "../deps.ts";
 import { JwtConfig } from "../middleware/jwt.ts";
-import { DB, MongoDatabase } from '../deps.ts';
+import { DB, MongoDatabase } from "../deps.ts";
 
 class Users {
-	db: DB;
-	mongo: MongoDatabase;
+  db: DB;
+  mongo: MongoDatabase;
 
-	constructor(db:any, mongo:any) {
-		this.db = db;
-		this.mongo = mongo;
-	}
+  constructor(db: any, mongo: any) {
+    this.db = db;
+    this.mongo = mongo;
+  }
 
   getRandomId() {
     return crypto.randomUUID();
@@ -106,7 +106,17 @@ class Users {
   }
 
   async findByEmail(email: string) {
-    const query = this.db.prepareQuery<any[]>(
+    const query = this.db.prepareQuery<
+      [],
+      {
+        id: string;
+        username: string;
+        created_at: string;
+        contactme: number;
+        phone: number;
+        stripe_customer_id: string;
+      }
+    >(
       "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE email = :email"
     );
 
@@ -126,6 +136,57 @@ class Users {
     };
     // return the generated token
     return create({ alg: "HS512", typ: "JWT" }, payload, JwtConfig.secretKey);
+  }
+
+  updatePasswordResetData(userID: string, token: string, expiry: number) {
+    try {
+      const query = this.db.query<any[]>(
+        `
+      UPDATE users
+      SET
+      password_reset_token = ?,
+      password_reset_expiry = ?
+      WHERE id = ?`,
+        [token, expiry, userID]
+      );
+      return query;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async getPasswordResetData(token: string) {
+    const query = this.db.prepareQuery<
+      [],
+      { id: string; password_reset_expiry: string }
+    >(
+      "SELECT id, password_reset_expiry FROM users WHERE password_reset_token = :token"
+    );
+
+    try {
+      return await query.oneEntry({ token });
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }
+
+  updatePassword(userID: string, hashedPassword: string) {
+    try {
+      const expiry = Date.now();
+      const query = this.db.query<any[]>(
+        `
+      UPDATE users
+      SET
+      hashed_password = ?,
+      password_reset_expiry = ?
+      WHERE id = ?`,
+        [hashedPassword, expiry, userID]
+      );
+      return query;
+    } catch (err) {
+      console.error(err);
+    }
   }
 }
 
