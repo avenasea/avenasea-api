@@ -1,10 +1,12 @@
-import { bcrypt } from "../deps.ts";
+import { bcrypt, config } from "../deps.ts";
 import Users from "../models/users.ts";
+import sendEmail from "../email/send-email.ts";
+const ENV = config();
 
 class Controller {
   async register(context: any) {
     const { db, mongo } = context.state;
-		const users = new Users(db, mongo);
+    const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
     const existing = await db.query("SELECT * FROM users WHERE email = ?", [
       body.email,
@@ -45,7 +47,7 @@ class Controller {
   async update(context: any) {
     const { db, mongo } = context.state;
     const id = context.state.user.id;
-		const users = new Users(db, mongo);
+    const users = new Users(db, mongo);
     const user = await users.find(id);
 
     if (!user) {
@@ -149,7 +151,7 @@ class Controller {
 
   async login(context: any) {
     const { db, mongo } = context.state;
-		const users = new Users(db, mongo);
+    const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
     let user: any;
 
@@ -221,7 +223,7 @@ class Controller {
     //get user id from jwt
     const { db, mongo } = context.state;
     const id = context.state.user.id;
-		const users = new Users(db, mongo);
+    const users = new Users(db, mongo);
     const user: any = await users.find(id);
     if (typeof user === "undefined") {
       context.response.status = 400;
@@ -247,7 +249,7 @@ class Controller {
   async getUsername(context: any) {
     const { db, mongo } = context.state;
     const id = context.state.user?.id;
-		const users = new Users(db, mongo);
+    const users = new Users(db, mongo);
     const username = context.params.username;
     const user = await users.findByUsername(username, id);
 
@@ -261,7 +263,7 @@ class Controller {
 
   async getAll(context: any) {
     const { db, mongo } = context.state;
-		const _users = new Users(db, mongo)
+    const _users = new Users(db, mongo);
     const users = await _users.findAll();
 
     if (!users.length) {
@@ -269,6 +271,81 @@ class Controller {
       context.response.body = { message: "Users not found" };
     } else {
       context.response.body = users;
+    }
+  }
+
+  async requestReset(context: any) {
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
+    const body = JSON.parse(await context.request.body().value);
+
+    if (!body.email) {
+      context.response.status = 400;
+      context.response.body = { message: "invalid email" };
+      return;
+    }
+
+    context.response.body = { message: "success" };
+
+    const user = await users.findByEmail(body.email);
+
+    if (!user) return;
+
+    const token = crypto.randomUUID();
+    const expiry = Date.now() + 900000;
+
+    users.updatePasswordResetData(user.id, token, expiry);
+
+    const resetUrl = `https://${ENV.HOST_PATH}/password/reset?token=${token}&expiry=${expiry}`;
+
+    await sendEmail({
+      to: body.email,
+      subject: "Password Reset Request",
+      text: `
+        You have requested to reset your password.\n
+        Paste this link into your browser: ${resetUrl}
+      `,
+      html: `
+        You have requested to reset your password.<br>
+        <a href="${resetUrl}">Click here</a> or paste this link into your browser: ${resetUrl}
+      `,
+    }).catch(console.error);
+  }
+
+  async passwordReset(context: any) {
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
+    const body = JSON.parse(await context.request.body().value);
+
+    if (!body.token || !body.password) {
+      context.response.status = 400;
+      context.response.body = { message: "missing token or password" };
+      return;
+    }
+
+    const passwordResetData = await users.getPasswordResetData(body.token);
+
+    if (!passwordResetData) {
+      context.response.status = 400;
+      context.response.body = { message: "invalid or expired token" };
+      return;
+    }
+
+    if (parseInt(passwordResetData.password_reset_expiry) < Date.now()) {
+      context.response.status = 400;
+      context.response.body = { message: "invalid or expired token" };
+      return;
+    }
+
+    try {
+      const hashedPassword = await users.hashPassword(body.password);
+      users.updatePassword(passwordResetData.id, hashedPassword);
+      context.response.body = { message: "successfully updated password" };
+    } catch {
+      context.response.status = 500;
+      context.response.body = {
+        message: "an error occurred whilst updating password",
+      };
     }
   }
 }
