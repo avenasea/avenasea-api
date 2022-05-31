@@ -155,16 +155,23 @@ class Users {
     }
   }
 
-  async getPasswordResetData(token: string) {
-    const query = this.db.prepareQuery<
-      [],
-      { id: string; password_reset_expiry: string }
-    >(
-      "SELECT id, password_reset_expiry FROM users WHERE password_reset_token = :token"
-    );
-
+  async getPasswordResetData({
+    token,
+    userID,
+  }: {
+    token?: string;
+    userID?: string;
+  }) {
     try {
-      return await query.oneEntry({ token });
+      const query = this.db.prepareQuery<
+        [],
+        { id: string; password_reset_expiry: string }
+      >(
+        `SELECT id, password_reset_expiry, password_reset_token FROM users WHERE ${
+          token ? `password_reset_token = '${token}'` : `id = '${userID}'`
+        }`
+      );
+      return await query.oneEntry();
     } catch (err) {
       console.error(err);
       return null;
