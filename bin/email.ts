@@ -78,6 +78,7 @@ async function getSerps(q: string): Promise<any> {
     if (!data.organic_results?.length) return { txt, htm };
   } catch (err) {
     console.error(err);
+    return {};
   }
 
   const qmatchres = q.match(/^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/);
@@ -95,7 +96,7 @@ ${host}
 ==========================`;
   }
 
-  data.organic_results.map((item: any) => {
+  data.organic_results?.map((item: any) => {
     const { title, link, snippet } = item;
     txt += `
 ${title}
