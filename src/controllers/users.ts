@@ -291,6 +291,18 @@ class Controller {
 
     if (!user) return;
 
+    const passwordResetData = await users.getPasswordResetData({
+      userID: user.id,
+    });
+
+    if (
+      passwordResetData &&
+      parseInt(passwordResetData.password_reset_expiry) > Date.now()
+    ) {
+      // token still valid
+      return;
+    }
+
     const token = crypto.randomUUID();
     const expiry = Date.now() + 900000;
 
@@ -323,7 +335,9 @@ class Controller {
       return;
     }
 
-    const passwordResetData = await users.getPasswordResetData(body.token);
+    const passwordResetData = await users.getPasswordResetData({
+      token: body.token,
+    });
 
     if (!passwordResetData) {
       context.response.status = 400;
