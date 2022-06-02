@@ -362,6 +362,59 @@ class Controller {
       };
     }
   }
+
+  async newsletter(context: any) {
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
+    const body = JSON.parse(await context.request.body().value);
+    const existing = await db.query(
+      "SELECT * FROM newsletters WHERE email = ?",
+      [body.email]
+    );
+
+    if (existing.length) {
+      context.response.status = 400;
+      return (context.response.body = { message: "User already subscribed" });
+    }
+
+    // todo:
+    // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
+    const user = await db.query(
+      "INSERT INTO newsletters (id, email, name, created_at, updated_at, contactme, phone) VALUES (?,?,?,?,?,?,?)",
+      [
+        users.getRandomId(),
+        body.email.toLowerCase(),
+        body.name.toLowerCase(),
+        users.getCurrentTime(),
+        users.getCurrentTime(),
+        body.contactme,
+        body.phone,
+      ]
+    );
+
+    console.log("user subscribed! ", body.email, users.getCurrentTime());
+    context.response.body = { message: "User subscribed" };
+  }
+
+  async unsubscribeNewsletter(context: any) {
+    const { db, mongo } = context.state;
+    const { id } = context.params;
+    const existing = await db.query("SELECT * FROM newsletters WHERE id = ?", [
+      id,
+    ]);
+
+    if (!existing.length) {
+      context.response.status = 400;
+      return (context.response.body = { message: "User not subscribed" });
+    }
+
+    // todo:
+    // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
+    const user = await db.query("DELETE FROM newsletters WHERE id = ?", [id]);
+
+    console.log("user un-subscribed", id);
+    context.response.body = { message: "User un-subscribed" };
+  }
 }
 
 export default new Controller();
