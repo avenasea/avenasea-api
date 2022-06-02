@@ -4,14 +4,29 @@ import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import stats from "./src/routes/stats.ts";
 import jobs from "./src/routes/jobs.ts";
+// import formatError from "./src/utils/formatError.ts";
+
 import payments from "./src/routes/payments.ts";
-import affiliates from "./src/routes/affiliates.ts";
+//import affiliates from "./src/routes/affiliates.ts";
+import { DB, MongoClient } from "./src/db.ts";
+
+const client = new MongoClient();
 
 config({ export: true });
 //console.log(config());
 const env = Deno.env.toObject();
 const port = parseInt(env.PORT);
 const app = new Application();
+
+//Db
+const db = new DB("database.sqlite");
+const mongo = await client.connect("mongodb://127.0.0.1:27017");
+
+app.use(async (ctx, next) => {
+  ctx.state.db = db;
+  ctx.state.mongo = mongo;
+  await next();
+});
 
 // Logger
 app.use(async (ctx, next) => {
@@ -41,8 +56,8 @@ app.use(stats.routes());
 app.use(stats.allowedMethods());
 app.use(payments.routes());
 app.use(payments.allowedMethods());
-app.use(affiliates.routes());
-app.use(affiliates.allowedMethods());
+//app.use(affiliates.routes());
+//app.use(affiliates.allowedMethods());
 
 console.log(`Listening on http://localhost:${port}/api/1`);
 await app.listen({ port });

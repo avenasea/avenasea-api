@@ -1,4 +1,5 @@
-import { DB } from "./deps.ts";
+import { DB, MongoClient } from "./deps.ts";
 
-export const db = new DB("database.sqlite");
-export { DB };
+//const db = new DB("database.sqlite");
+
+export { DB, MongoClient };

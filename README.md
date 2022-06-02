@@ -14,7 +14,7 @@
 
     # start server
 
-    deno run --allow-all --unstable index.ts
+    deno run -Ar --unstable index.ts
 
 ## compile
 

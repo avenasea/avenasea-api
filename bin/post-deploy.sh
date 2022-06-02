@@ -2,7 +2,6 @@
 
 cd "$(dirname "$0")/.."
 . $HOME/.bashrc
-#cp ./.env.local ./.env
 . ./.env.defaults
 . ./.env
 
@@ -14,13 +13,10 @@ echo "current name: $name"
 
 cd $HOME/www/${name}/${project}
 
-#v up
-#v upgrade
-#v app.v
+#deno compile -Ar --unstable --output ./api ./index.ts 
+deno upgrade --version 1.22.0
+deno run -Ar --unstable https://deno.land/x/nessie/cli.ts migrate
 
-#go build ./src/main.go
-#deno compile --allow-all --unstable --no-check -r --output ./api ./index.ts 
-deno upgrade
-deno run -A --unstable https://deno.land/x/nessie/cli.ts migrate
-
-echo $HOST_PASS | sudo -S systemctl restart ${META_SERVICE}
+sudo /etc/init.d/nginx reload
+sudo systemctl daemon-reload
+sudo systemctl restart ${META_SERVICE}

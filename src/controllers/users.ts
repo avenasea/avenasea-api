@@ -1,10 +1,12 @@
-import { bcrypt } from "../deps.ts";
+import { bcrypt, config } from "../deps.ts";
 import Users from "../models/users.ts";
-import { db } from "../db.ts";
+import sendEmail from "../email/send-email.ts";
+const ENV = config();
 
 class Controller {
   async register(context: any) {
-    // const db: any = context.state.db;
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
     const existing = await db.query("SELECT * FROM users WHERE email = ?", [
       body.email,
@@ -22,30 +24,31 @@ class Controller {
 
     // todo:
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
-    const hashedPassword = await Users.hashPassword(body.password);
+    const hashedPassword = await users.hashPassword(body.password);
     const user = await db.query(
       "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
       [
-        Users.getRandomId(),
+        users.getRandomId(),
         body.email.toLowerCase(),
         body.username.toLowerCase(),
         hashedPassword,
-        Users.getCurrentTime(),
-        Users.getCurrentTime(),
+        users.getCurrentTime(),
+        users.getCurrentTime(),
         body.contactme,
         body.phone,
         body.location,
       ]
     );
 
-    console.log("user registered! ", body.email, Users.getCurrentTime());
+    console.log("user registered! ", body.email, users.getCurrentTime());
     context.response.body = { message: "User created" };
   }
 
   async update(context: any) {
-    // const db: any = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
-    const user = await Users.find(id);
+    const users = new Users(db, mongo);
+    const user = await users.find(id);
 
     if (!user) {
       context.response.status = 400;
@@ -90,7 +93,7 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
-      const hashedPassword = await Users.hashPassword(body.newPassword);
+      const hashedPassword = await users.hashPassword(body.newPassword);
       await db.query(
         "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
         [
@@ -98,7 +101,7 @@ class Controller {
           user.email,
           user.username,
           user.contactme,
-          Users.getCurrentTime(),
+          users.getCurrentTime(),
           user.phone,
           user.location,
           id,
@@ -126,7 +129,7 @@ class Controller {
         [
           user.email,
           user.username,
-          Users.getCurrentTime(),
+          users.getCurrentTime(),
           user.contactme,
           user.phone,
           user.location,
@@ -140,16 +143,23 @@ class Controller {
       user.email,
       user.username,
       user.phone,
-      Users.getCurrentTime()
+      users.getCurrentTime()
     );
 
     context.response.body = { message: "User updated" };
   }
 
   async login(context: any) {
-    // const db: any = context.state.db;
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
     let user: any;
+
+    if (!body.email || !body.password) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
+    }
 
     try {
       const query = db.prepareQuery(
@@ -171,6 +181,12 @@ class Controller {
       return;
     }
 
+    if (!user.email) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
+    }
+
     console.log("user login: ", user.email);
     const comparison = await bcrypt.compare(
       body.password,
@@ -179,12 +195,11 @@ class Controller {
 
     if (comparison) {
       context.response.status = 200;
-      //delete user.hashed_password;
-      const token = await Users.generateJwt(user.id);
+      const token = await users.generateJwt(user.id);
       delete user.hashed_password;
 
       await db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
-        Users.getCurrentTime(),
+        users.getCurrentTime(),
         user.email,
       ]);
 
@@ -206,9 +221,10 @@ class Controller {
 
   async getMe(context: any) {
     //get user id from jwt
-    // const db: any = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
-    const user: any = await Users.find(id);
+    const users = new Users(db, mongo);
+    const user: any = await users.find(id);
     if (typeof user === "undefined") {
       context.response.status = 400;
       context.response.body = { message: "User not found" };
@@ -231,10 +247,11 @@ class Controller {
   }
 
   async getUsername(context: any) {
-    // const db: any = context.state.db;
+    const { db, mongo } = context.state;
     const id = context.state.user?.id;
+    const users = new Users(db, mongo);
     const username = context.params.username;
-    const user = await Users.findByUsername(username, id);
+    const user = await users.findByUsername(username, id);
 
     if (!user) {
       context.response.status = 400;
@@ -245,14 +262,104 @@ class Controller {
   }
 
   async getAll(context: any) {
-    // const db: any = context.state.db;
-    const users = await Users.findAll();
+    const { db, mongo } = context.state;
+    const _users = new Users(db, mongo);
+    const users = await _users.findAll();
 
     if (!users.length) {
       context.response.status = 400;
       context.response.body = { message: "Users not found" };
     } else {
       context.response.body = users;
+    }
+  }
+
+  async requestReset(context: any) {
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
+    const body = JSON.parse(await context.request.body().value);
+
+    if (!body.email) {
+      context.response.status = 400;
+      context.response.body = { message: "invalid email" };
+      return;
+    }
+
+    context.response.body = { message: "success" };
+
+    const user = await users.findByEmail(body.email);
+
+    if (!user) return;
+
+    const passwordResetData = await users.getPasswordResetData({
+      userID: user.id,
+    });
+
+    if (
+      passwordResetData &&
+      parseInt(passwordResetData.password_reset_expiry) > Date.now()
+    ) {
+      // token still valid
+      return;
+    }
+
+    const token = crypto.randomUUID();
+    const expiry = Date.now() + 900000;
+
+    users.updatePasswordResetData(user.id, token, expiry);
+
+    const resetUrl = `https://${ENV.HOST_PATH}/password/reset?token=${token}&expiry=${expiry}`;
+
+    await sendEmail({
+      to: body.email,
+      subject: "Password Reset Request",
+      text: `
+        You have requested to reset your password.\n
+        Paste this link into your browser: ${resetUrl}
+      `,
+      html: `
+        You have requested to reset your password.<br>
+        <a href="${resetUrl}">Click here</a> or paste this link into your browser: ${resetUrl}
+      `,
+    }).catch(console.error);
+  }
+
+  async passwordReset(context: any) {
+    const { db, mongo } = context.state;
+    const users = new Users(db, mongo);
+    const body = JSON.parse(await context.request.body().value);
+
+    if (!body.token || !body.password) {
+      context.response.status = 400;
+      context.response.body = { message: "missing token or password" };
+      return;
+    }
+
+    const passwordResetData = await users.getPasswordResetData({
+      token: body.token,
+    });
+
+    if (!passwordResetData) {
+      context.response.status = 400;
+      context.response.body = { message: "invalid or expired token" };
+      return;
+    }
+
+    if (parseInt(passwordResetData.password_reset_expiry) < Date.now()) {
+      context.response.status = 400;
+      context.response.body = { message: "invalid or expired token" };
+      return;
+    }
+
+    try {
+      const hashedPassword = await users.hashPassword(body.password);
+      users.updatePassword(passwordResetData.id, hashedPassword);
+      context.response.body = { message: "successfully updated password" };
+    } catch {
+      context.response.status = 500;
+      context.response.body = {
+        message: "an error occurred whilst updating password",
+      };
     }
   }
 }

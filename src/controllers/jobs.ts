@@ -1,9 +1,6 @@
-// import Searches from "../models/searches.ts";
-import { db } from "../db.ts";
-import Users from "../models/users.ts";
-
 class Controller {
   async post(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, title, type, pay, contact, description } = body;
@@ -54,6 +51,7 @@ class Controller {
   }
 
   async delete(context: any) {
+    const db = context.state.db;
     const id = context.params.id;
 
     await db.query("DELETE FROM jobs WHERE id = ?", [id]);
@@ -65,6 +63,7 @@ class Controller {
   }
 
   async getMyJobs(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
     const all = await db.queryEntries("SELECT * FROM jobs WHERE user_id = ?", [
       id,
@@ -74,6 +73,7 @@ class Controller {
   }
 
   async getAll(context: any) {
+    const db = context.state.db;
     const all = await db.queryEntries(`
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u ON j.user_id = u.id ORDER BY j.created_at DESC
@@ -83,6 +83,7 @@ class Controller {
   }
 
   async getByTag(context: any) {
+    const db = context.state.db;
     const tag = context.params.tag.replace(/-+/g, " ");
 
     const all = await db.queryEntries(
@@ -97,6 +98,7 @@ class Controller {
   }
 
   async getByUsername(context: any) {
+    const db = context.state.db;
     const { username } = context.params;
 
     const all = await db.queryEntries(
@@ -110,6 +112,7 @@ class Controller {
     context.response.body = all;
   }
   async getOne(context: any) {
+    const db = context.state.db;
     // const id = context.state.user.id;
     const job_id = context.params.id;
     let data =
@@ -130,12 +133,13 @@ class Controller {
       [job_id]
     );
 
-    data.positive = positive.map((w) => w.word);
-    data.negative = negative.map((w) => w.word);
+    data.positive = positive.map((w: any) => w.word);
+    data.negative = negative.map((w: any) => w.word);
     context.response.body = data;
   }
 
   async update(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, title, type, contact, pay, description } = body;

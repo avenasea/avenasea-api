@@ -1,8 +1,7 @@
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 import { pooledMap } from "https://deno.land/std/async/mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
-import { config } from "../src/deps.ts";
-import { db } from "../src/db.ts";
+import { config, DB } from "../src/deps.ts";
 import cities from "./cities.js";
 import { ats } from "../ats.ts";
 import {
@@ -24,6 +23,8 @@ const UAs = [
   "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0",
 ];
 const sites = ats;
+
+const db = new DB("database.sqlite");
 
 interface WhateverResult {
   title: string;
@@ -77,6 +78,7 @@ async function getSerps(q: string): Promise<any> {
     if (!data.organic_results?.length) return { txt, htm };
   } catch (err) {
     console.error(err);
+    return {};
   }
 
   const qmatchres = q.match(/^inurl:([^\s\/]+)((?!\s).)*\s*(.+)/);
@@ -94,7 +96,7 @@ ${host}
 ==========================`;
   }
 
-  data.organic_results.map((item: any) => {
+  data.organic_results?.map((item: any) => {
     const { title, link, snippet } = item;
     txt += `
 ${title}

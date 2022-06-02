@@ -1,10 +1,9 @@
-// import Searches from "../models/searches.ts";
-import { db } from "../db.ts";
 import Users from "../models/users.ts";
 import { checkPerms } from "../middleware/perms.ts";
 
 class Controller {
   async post(context: any) {
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, name, type } = body;
@@ -57,6 +56,7 @@ class Controller {
   }
 
   async delete(context: any) {
+    const { db, mongo } = context.state;
     const id = context.params.id;
 
     await db.query("DELETE FROM searches WHERE id = ?", [id]);
@@ -68,6 +68,7 @@ class Controller {
   }
 
   async getAll(context: any) {
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
     const type = context.request.url.searchParams.get("type") || "job";
     const all = await db.queryEntries(
@@ -79,6 +80,7 @@ class Controller {
   }
 
   async getByTag(context: any) {
+    const { db, mongo } = context.state;
     const tag = context.params.tag.replace(/-+/g, " ");
 
     const all = await db.queryEntries(
@@ -93,6 +95,7 @@ class Controller {
   }
 
   async getByUsername(context: any) {
+    const { db, mongo } = context.state;
     const { username } = context.params;
 
     const all = await db.queryEntries(
@@ -112,6 +115,8 @@ class Controller {
     // find other searches (type job) where positive and negative match
     // join on user
     // return users
+    const { db, mongo } = context.state;
+		const users = new Users(db, mongo);
     const id = context.state.user.id;
     const search_id = context.params.id;
     console.log(id, search_id);
@@ -126,16 +131,16 @@ class Controller {
     console.log("positive: ", positive, " negative: ", negative);
     let pIn = "";
     let nIn = "";
-    positive.forEach((p, i) => {
+    positive.forEach((p: any, i: any) => {
       pIn += "?" + (i < positive.length - 1 ? "," : "");
     });
 
-    negative.forEach((n, i) => {
+    negative.forEach((n: any, i: any) => {
       nIn += "?" + (i < negative.length - 1 ? "," : "");
     });
     console.log("pIn", pIn);
-    const pWords = <[]>positive.map((p) => p.word);
-    const nWords = <[]>negative.map((n) => n.word);
+    const pWords = <[]>positive.map((p: any) => p.word);
+    const nWords = <[]>negative.map((n: any) => n.word);
     console.log("pWords", pWords);
     const args = [].concat(pWords, nWords, id);
     console.log("args", args);
@@ -162,7 +167,7 @@ class Controller {
 
     for (let search of searches) {
       const { user_id } = search as { user_id: string };
-      const user = await Users.find(user_id);
+      const user = await users.find(user_id);
       search.user = user;
     }
 
@@ -191,6 +196,7 @@ class Controller {
   }
 
   async getOne(context: any) {
+    const { db, mongo } = context.state;
     // const id = context.state.user.id;
     const search_id = context.params.id;
     let data =
@@ -211,12 +217,13 @@ class Controller {
       [search_id]
     );
 
-    data.positive = positive.map((w) => w.word);
-    data.negative = negative.map((w) => w.word);
+    data.positive = positive.map((w: any) => w.word);
+    data.negative = negative.map((w: any) => w.word);
     context.response.body = data;
   }
 
   async update(context: any) {
+    const { db, mongo } = context.state;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, name, type } = body;

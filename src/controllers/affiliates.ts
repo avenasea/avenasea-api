@@ -1,222 +1,275 @@
-// import Searches from "../models/searches.ts";
-import { db } from "../db.ts";
+import { bcrypt } from "../deps.ts";
 import Users from "../models/users.ts";
 
 class Controller {
-  async post(context: any) {
-    const id = context.state.user.id;
+  async register(context: any) {
+    const db = context.state.db;
+		const users = new Users(db);
     const body = JSON.parse(await context.request.body().value);
-    const { positive, negative, name, type } = body;
-    const data: any = {};
-    const search_id = crypto.randomUUID();
+    const existing = await db.query("SELECT * FROM users WHERE email = ?", [
+      body.email,
+    ]);
 
-    // insert name of search
-    await db.query(
-      "INSERT INTO searches (id, user_id, name, created_at, updated_at, type) VALUES (?, ?, ?, ?, ?, ?)",
+    const userNameExisting = await db.query(
+      "SELECT * FROM users WHERE username = ?",
+      [body.username]
+    );
+
+    if (existing.length || userNameExisting.length) {
+      context.response.status = 400;
+      return (context.response.body = { message: "User already exists" });
+    }
+
+    // todo:
+    // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
+    const hashedPassword = await users.hashPassword(body.password);
+    const user = await db.query(
+      "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
       [
-        search_id,
-        id,
-        name,
-        new Date().toISOString(),
-        new Date().toISOString(),
-        type,
+        users.getRandomId(),
+        body.email.toLowerCase(),
+        body.username.toLowerCase(),
+        hashedPassword,
+        users.getCurrentTime(),
+        users.getCurrentTime(),
+        body.contactme,
+        body.phone,
+        body.location,
       ]
     );
 
-    // add positive keywords
-    for (let word of positive) {
-      await db.query(
-        "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
-      );
-    }
-
-    // add negative keywords
-    for (let word of negative) {
-      await db.query(
-        "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
-      );
-    }
-
-    data.positive = positive;
-    data.negative = negative;
-    data.name = name;
-
-    context.response.status = 201;
-    context.response.body = data;
-  }
-
-  async delete(context: any) {
-    const id = context.params.id;
-
-    await db.query("DELETE FROM searches WHERE id = ?", [id]);
-    await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
-    await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
-
-    context.response.status = 204;
-  }
-
-  async getAll(context: any) {
-    const id = context.state.user.id;
-    const type = context.request.url.searchParams.get("type") || "job";
-    const all = await db.queryEntries(
-      "SELECT * FROM searches WHERE user_id = ? AND type = ?",
-      [id, type]
-    );
-
-    context.response.body = all;
-  }
-
-  async getCandidates(context: any) {
-    // todo
-    // get search obj
-    // find other searches (type job) where positive and negative match
-    // join on user
-    // return users
-    const id = context.state.user.id;
-    const search_id = context.params.id;
-    console.log(id, search_id);
-    const positive = await db.queryEntries(
-      `SELECT * FROM positive WHERE search_id = ?`,
-      [search_id]
-    );
-    const negative = await db.queryEntries(
-      `SELECT * FROM negative WHERE search_id = ?`,
-      [search_id]
-    );
-    console.log("positive: ", positive, " negative: ", negative);
-    let pIn = "";
-    let nIn = "";
-    positive.forEach((p, i) => {
-      pIn += "?" + (i < positive.length - 1 ? "," : "");
-    });
-
-    negative.forEach((n, i) => {
-      nIn += "?" + (i < negative.length - 1 ? "," : "");
-    });
-    console.log("pIn", pIn);
-    const pWords = <[]>positive.map((p) => p.word);
-    const nWords = <[]>negative.map((n) => n.word);
-    console.log("pWords", pWords);
-    const args = [].concat(pWords, nWords, id);
-    console.log("args", args);
-    /*
-    const searches = await db.queryEntries(
-      `SELECT s.* FROM searches s, positive p, negative n
-      INNER JOIN positive ON s.id = positive.search_id
-      INNER JOIN negative ON s.id = negative.search_id
-       WHERE p.word IN (${pIn}) AND p.word NOT IN (${nIn})
-       `,
-      args
-    );
-
-       */
-    let searches = await db.queryEntries(
-      `SELECT s.*
-        FROM searches s
-        WHERE EXISTS (SELECT 1 FROM positive p WHERE p.word IN (${pIn}) AND p.search_id = s.id)
-        AND NOT EXISTS (SELECT 1 FROM positive p WHERE p.word IN (${nIn}) AND p.search_id = s.id)
-        AND s.type = 'job' AND s.user_id != ?
-       `,
-      args
-    );
-
-    for (let search of searches) {
-      const { user_id } = search as { user_id: string };
-      const user = await Users.find(user_id);
-      search.user = user;
-    }
-
-    // filter out those who wish to not be contacted
-    searches = searches.filter((search: any) => {
-      return search.user.contactme;
-    });
-
-    console.log("searches: ", searches);
-    /*
-    const searches = db.queryEntries(`
-      SELECT s.*,
-        p.word as posWord,
-        n.word as negWord
-      FROM searches s
-      INNER JOIN positive p
-        ON p.search_id = s.id
-      INNER JOIN negative n
-      ON n.search_id = s.id
-      GROUP BY n.id AND p.id
-    `);
-
-    console.log(searches);
-*/
-    context.response.body = searches;
-  }
-
-  async getOne(context: any) {
-    const id = context.state.user.id;
-    const search_id = context.params.id;
-    let data =
-      (await db
-        .queryEntries("SELECT * FROM searches WHERE user_id = ? AND id = ?", [
-          id,
-          search_id,
-        ])
-        .pop()) || {};
-
-    const positive = await db.queryEntries(
-      "SELECT word FROM positive WHERE search_id = ?",
-      [search_id]
-    );
-
-    const negative = await db.queryEntries(
-      "SELECT word FROM negative WHERE search_id = ?",
-      [search_id]
-    );
-
-    data.positive = positive.map((w) => w.word);
-    data.negative = negative.map((w) => w.word);
-    context.response.body = data;
+    console.log("user registered! ", body.email, users.getCurrentTime());
+    context.response.body = { message: "User created" };
   }
 
   async update(context: any) {
+    const db = context.state.db;
     const id = context.state.user.id;
-    const body = JSON.parse(await context.request.body().value);
-    const { positive, negative, name, type } = body;
-    const data: any = {};
-    const search_id = context.params.id;
+		const users = new Users(db);
+    const user = await users.find(id);
 
-    // insert name of search
-    await db.query(
-      "UPDATE searches SET name = ?, updated_at = ?, type = ? WHERE id = ?",
-      [name, new Date().toISOString(), type, search_id]
+    if (!user) {
+      context.response.status = 400;
+      return (context.response.body = { message: "User does not exist" });
+    }
+
+    const body = JSON.parse(await context.request.body().value);
+    if (body.newEmail) {
+      const existing = await db.query("SELECT * FROM users WHERE email = ?", [
+        body.newEmail,
+      ]);
+
+      if (existing.length) {
+        context.response.status = 400;
+        return (context.response.body = { message: "User already exists" });
+      }
+    }
+
+    if (body.newUsername) {
+      const userNameExisting = await db.query(
+        "SELECT * FROM users WHERE username = ?",
+        [body.newUsername]
+      );
+
+      if (userNameExisting.length) {
+        context.response.status = 400;
+        return (context.response.body = { message: "User already exists" });
+      }
+    }
+
+    user.contactme = Number(body.contactme);
+    user.phone = body.newPhone;
+    user.location = body.location;
+
+    if (body.newPassword) {
+      // updating password and fields
+      if (body.newEmail) {
+        user.email = body.newEmail.toLowerCase();
+      }
+
+      if (body.newUsername) {
+        user.username = body.newUsername.toLowerCase();
+      }
+
+      const hashedPassword = await users.hashPassword(body.newPassword);
+      await db.query(
+        "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
+        [
+          hashedPassword,
+          user.email,
+          user.username,
+          user.contactme,
+          users.getCurrentTime(),
+          user.phone,
+          user.location,
+          id,
+        ]
+      );
+    } else {
+      // updating fields only
+      if (body.newEmail) {
+        user.email = body.newEmail.toLowerCase();
+      }
+
+      if (body.newUsername) {
+        user.username = body.newUsername.toLowerCase();
+      }
+
+      await db.query(
+        `UPDATE users
+           SET email = ?,
+           username = ?,
+           updated_at = ?,
+           contactme = ?,
+           phone = ?,
+           location = ?
+        WHERE id = ?`,
+        [
+          user.email,
+          user.username,
+          users.getCurrentTime(),
+          user.contactme,
+          user.phone,
+          user.location,
+          id,
+        ]
+      );
+    }
+
+    console.log(
+      "user updated! ",
+      user.email,
+      user.username,
+      user.phone,
+      users.getCurrentTime()
     );
 
-    // add positive keywords
-    await db.query("DELETE from positive WHERE search_id = ?", [search_id]);
+    context.response.body = { message: "User updated" };
+  }
 
-    for (let word of positive) {
-      await db.query(
-        "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
-      );
+  async login(context: any) {
+    const db = context.state.db;
+		const users = new User(db);
+    const body = JSON.parse(await context.request.body().value);
+    let user: any;
+
+    if (!body.email || !body.password) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
     }
 
-    // add negative keywords
-    await db.query("DELETE from negative WHERE search_id = ?", [search_id]);
-
-    for (let word of negative) {
-      await db.query(
-        "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), search_id, word.trim().toLowerCase()]
+    try {
+      const query = db.prepareQuery(
+        `SELECT
+        id,
+        email,
+        hashed_password,
+        billing.status
+        FROM users
+        LEFT JOIN billing ON billing.user_id = users.id
+        WHERE email = :email`
       );
+      user = query.oneEntry({ email: body.email.toLowerCase() });
+      query.finalize();
+    } catch (err) {
+      console.error(err);
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
     }
 
-    data.positive = positive;
-    data.negative = negative;
-    data.name = name;
+    if (!user.email) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+      return;
+    }
 
-    context.response.status = 201;
-    context.response.body = data;
+    console.log("user login: ", user.email);
+    const comparison = await bcrypt.compare(
+      body.password,
+      user.hashed_password
+    );
+
+    if (comparison) {
+      context.response.status = 200;
+      const token = await users.generateJwt(user.id);
+      delete user.hashed_password;
+
+      await db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
+        users.getCurrentTime(),
+        user.email,
+      ]);
+
+      return (context.response.body = {
+        user,
+        token,
+      });
+    } else {
+      console.error(
+        "Incorrect login: ",
+        // body.password,
+        user.hashed_password,
+        comparison
+      );
+      context.response.status = 400;
+      context.response.body = { message: "Incorrect login" };
+    }
+  }
+
+  async getMe(context: any) {
+    //get user id from jwt
+    const db = context.state.db;
+    const id = context.state.user.id;
+		const users = new Users(db);
+    const user: any = await users.find(id);
+    if (typeof user === "undefined") {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+    } else {
+      // check subscription expiry
+      if (
+        user.payment_type == "coinpayments" &&
+        user.status == "active" &&
+        user.renewal_date <= Math.floor(Date.now() / 1000)
+      ) {
+        user.status = "canceled";
+        db.query("UPDATE billing SET status = ? WHERE user_id = ?", [
+          user.status,
+          id,
+        ]);
+      }
+      delete user.hashedPassword;
+      context.response.body = user;
+    }
+  }
+
+  async getUsername(context: any) {
+    const db = context.state.db;
+    const id = context.state.user?.id;
+		const users = new Users(db);
+    const username = context.params.username;
+    const user = await users.findByUsername(username, id);
+
+    if (!user) {
+      context.response.status = 400;
+      context.response.body = { message: "User not found" };
+    } else {
+      context.response.body = user;
+    }
+  }
+
+  async getAll(context: any) {
+    const db = context.state.db;
+		const _users = new Users(db)
+    const users = await _users.findAll();
+
+    if (!users.length) {
+      context.response.status = 400;
+      context.response.body = { message: "Users not found" };
+    } else {
+      context.response.body = users;
+    }
   }
 }
 
