@@ -1,0 +1,17 @@
+[Unit]
+Description=Avenasea api
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ubuntu
+WorkingDirectory=/home/ubuntu/www/avenasea.com/avenasea-api/
+ExecStart=/home/ubuntu/www/avenasea.com/avenasea-api/bin/start.sh
+StandardOutput=append:/var/log/avenasea-api.log
+StandardError=append:/var/log/avenasea-api.error.log
+
+[Install]
+WantedBy=multi-user.target
