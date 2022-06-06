@@ -1,0 +1,17 @@
+[Unit]
+Description=Clsearch api
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ubuntu
+WorkingDirectory=/home/ubuntu/www/clsearch.org/clsearch-api/
+ExecStart=/home/ubuntu/www/clsearch.org/clsearch-api/bin/start.sh
+StandardOutput=append:/var/log/clsearch-api.log
+StandardError=append:/var/log/clsearch-api.error.log
+
+[Install]
+WantedBy=multi-user.target
