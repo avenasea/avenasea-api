@@ -1,0 +1,17 @@
+[Unit]
+Description=Skatespot api
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ubuntu
+WorkingDirectory=/home/ubuntu/www/skatespot.com/skatespot-api/
+ExecStart=/home/ubuntu/www/skatespot.com/skatespot-api/bin/start.sh
+StandardOutput=append:/var/log/skatespot-api.log
+StandardError=append:/var/log/skatespot-api.error.log
+
+[Install]
+WantedBy=multi-user.target

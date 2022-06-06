@@ -16,6 +16,10 @@ router
   .post("/register", controller.register.bind(controller))
   .put("/me", validateJWT, controller.update.bind(controller))
   .post("/password/request-reset", controller.requestReset.bind(controller))
-  .put("/password/reset", controller.passwordReset.bind(controller));
-
+  .put("/password/reset", controller.passwordReset.bind(controller))
+  .post("/newsletters", controller.newsletter.bind(controller))
+  .delete(
+    "/newsletters/:id",
+    controller.unsubscribeNewsletter.bind(controller)
+  );
 export default router;
