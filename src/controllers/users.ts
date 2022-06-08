@@ -368,7 +368,7 @@ class Controller {
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
 
-    if (!body.email || body.email == "") {
+    if (body.email.indexOf("@") === -1) {
       context.response.status = 400;
       return (context.response.body = { message: "Invalid email" });
     }
