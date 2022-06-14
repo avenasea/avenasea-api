@@ -11,15 +11,8 @@ const schema: any = {
   $schema: 'http://json-schema.org/draft-07/schema#',
   description: '',
   type: 'object',
-  properties: {
-    modules: {
-      description: '',
-      type: 'object',
-      properties: {},
-    },
-  },
-  required: ['modules'],
-  additionalProperties: false,
+  properties: {},
+  required: [],
 };
 
 const types: any = {
@@ -30,28 +23,15 @@ const types: any = {
 
 for await (const row of readCSVObjects(f)) {
   const name = row['Field Name'];
-  const data = {
+  schema.properties[name] = {
     field: row['Field'],
+    module: row['Module'],
     description: row['Description'],
     type: types[row['Field Type']],
   };
-  if (!schema.properties.modules.properties[row['Module']]) {
-    schema.properties.modules.properties[row['Module']] = {
-      description: '',
-      type: 'object',
-      properties: {},
-    };
-  }
-  schema.properties.modules.properties[row['Module']].properties[name] = data;
   const match = row['Field Size'].match(/(\d+)/g);
-  if (match?.[0])
-    schema.properties.modules.properties[row['Module']].properties[
-      name
-    ].maxLength = parseInt(match[0]);
-  if (match?.[1])
-    schema.properties.modules.properties[row['Module']].properties[
-      name
-    ].minLength = parseInt(match[1]);
+  if (match?.[0]) schema.properties[name].maxLength = parseInt(match[0]);
+  if (match?.[1]) schema.properties[name].minLength = parseInt(match[1]);
 }
 
 Deno.writeTextFileSync('./newSchema.json', JSON.stringify(schema));
