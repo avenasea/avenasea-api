@@ -13,6 +13,7 @@ const schema: any = {
   type: 'object',
   properties: {},
   required: [],
+  additionalProperties: false,
 };
 
 const types: any = {
