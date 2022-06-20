@@ -19,3 +19,7 @@
 ## compile
 
     deno compile --allow-all --unstable --output ./api index.ts
+
+## competitors
+
+- https://www.alliancereservations.com/hotel-sourcing-rfp-process.html
