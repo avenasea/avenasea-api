@@ -52,7 +52,6 @@ for await (const row of readCSVObjects(f)) {
   const { lat, lon } = getCorrectLatLong(row);
 
   if (existing.some((e: HotelItem) => e.data?.name == row["title"]) == false) {
-    console.log(row.title);
     const schema: HotelItem["data"] = {};
     const name = row["title"];
     schema.name = name;
