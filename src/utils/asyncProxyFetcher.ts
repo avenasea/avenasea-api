@@ -69,6 +69,11 @@ export default class AsyncProxyFetcher {
             resolve({ body, url, otherData: requestData.otherData });
           } catch (err) {
             console.error(err);
+            resolve({
+              body: { error: true },
+              url,
+              otherData: requestData.otherData,
+            });
           }
         }
       );
