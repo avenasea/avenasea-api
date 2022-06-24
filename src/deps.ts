@@ -1,10 +1,14 @@
 import "./global.ts";
-import type { RouterContext } from "https://deno.land/x/oak@v10.4.0/mod.ts";
+import type {
+  RouterContext,
+  Context,
+} from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import { Application, Router } from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import {
   verify,
   create,
   getNumericDate,
+  Payload,
 } from "https://deno.land/x/djwt@v2.4/mod.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.3.0/mod.ts";
 import { DB } from "https://deno.land/x/sqlite@v3.4.0/mod.ts";
@@ -17,7 +21,6 @@ import * as Mongo from "https://deno.land/x/mongo@v0.30.0/mod.ts";
 
 export {
   Application,
-  RouterContext,
   verify,
   bcrypt,
   create,
@@ -31,3 +34,5 @@ export {
   Mongo,
   MongoDatabase,
 };
+
+export type { Payload, RouterContext, Context };
