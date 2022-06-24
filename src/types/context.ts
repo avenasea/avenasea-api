@@ -20,3 +20,13 @@ export type AuthorisedContext = RouterContext<
     user: UserPayload;
   }
 >;
+
+export type OptionallyAuthorisedContext = RouterContext<
+  any,
+  any,
+  {
+    db: DB;
+    mongo: Mongo.Database;
+    user: UserPayload | undefined;
+  }
+>;
