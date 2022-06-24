@@ -1,4 +1,5 @@
 import { RouterContext, verify } from "../deps.ts";
+import type { StandardContext } from "../types/context.ts";
 
 const keyData = await Deno.readTextFile("jwk.json");
 
@@ -15,7 +16,7 @@ export const JwtConfig = {
 };
 
 export const validateJWTOptionally = async (
-  { request, response, state }: RouterContext<any, any, any>,
+  { request, response, state }: StandardContext,
   next: VoidFunction
 ) => {
   const auth = request.headers.get("Authorization");
@@ -51,7 +52,7 @@ export const validateJWTOptionally = async (
 };
 
 export const validateJWT = async (
-  { request, response, state }: RouterContext<any, any, any>,
+  { request, response, state }: StandardContext,
   next: VoidFunction
 ) => {
   const auth = request.headers.get("Authorization");

@@ -1,4 +1,4 @@
-import { Application, config, oakCors } from "./src/deps.ts";
+import { Application, config, oakCors, Mongo, DB } from "./src/deps.ts";
 import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
@@ -8,9 +8,8 @@ import jobs from "./src/routes/jobs.ts";
 
 import payments from "./src/routes/payments.ts";
 //import affiliates from "./src/routes/affiliates.ts";
-import { DB, MongoClient } from "./src/db.ts";
 
-const client = new MongoClient();
+const client = new Mongo.MongoClient();
 
 config({ export: true });
 //console.log(config());
@@ -20,11 +19,12 @@ const app = new Application();
 
 //Db
 const db = new DB("database.sqlite");
-const mongo = await client.connect("mongodb://127.0.0.1:27017");
+await client.connect(env.MONGO_CONNECTION_STRING);
+const mongoDB: Mongo.Database = client.database(env.MONGO_DB_NAME);
 
 app.use(async (ctx, next) => {
   ctx.state.db = db;
-  ctx.state.mongo = mongo;
+  ctx.state.mongo = mongoDB;
   await next();
 });
 
