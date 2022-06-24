@@ -4,6 +4,7 @@ import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import stats from "./src/routes/stats.ts";
 import jobs from "./src/routes/jobs.ts";
+import contracts from "./src/routes/contracts.ts";
 // import formatError from "./src/utils/formatError.ts";
 
 import payments from "./src/routes/payments.ts";
@@ -56,6 +57,8 @@ app.use(stats.routes());
 app.use(stats.allowedMethods());
 app.use(payments.routes());
 app.use(payments.allowedMethods());
+app.use(contracts.routes());
+app.use(contracts.allowedMethods());
 //app.use(affiliates.routes());
 //app.use(affiliates.allowedMethods());
 
