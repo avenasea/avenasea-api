@@ -1,10 +1,15 @@
 import { bcrypt, config } from "../deps.ts";
 import Users from "../models/users.ts";
 import sendEmail from "../email/send-email.ts";
+import type {
+  StandardContext,
+  AuthorisedContext,
+  OptionallyAuthorisedContext,
+} from "../types/context.ts";
 const ENV = config();
 
 class Controller {
-  async register(context: any) {
+  async register(context: StandardContext) {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
@@ -44,11 +49,11 @@ class Controller {
     context.response.body = { message: "User created" };
   }
 
-  async update(context: any) {
+  async update(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const id = context.state.user.id;
     const users = new Users(db, mongo);
-    const user = await users.find(id);
+    const user: any = await users.find(id);
 
     if (!user) {
       context.response.status = 400;
@@ -149,7 +154,7 @@ class Controller {
     context.response.body = { message: "User updated" };
   }
 
-  async login(context: any) {
+  async login(context: StandardContext) {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
@@ -219,7 +224,7 @@ class Controller {
     }
   }
 
-  async getMe(context: any) {
+  async getMe(context: AuthorisedContext) {
     //get user id from jwt
     const { db, mongo } = context.state;
     const id = context.state.user.id;
@@ -246,12 +251,12 @@ class Controller {
     }
   }
 
-  async getUsername(context: any) {
+  async getUsername(context: OptionallyAuthorisedContext) {
     const { db, mongo } = context.state;
     const id = context.state.user?.id;
     const users = new Users(db, mongo);
     const username = context.params.username;
-    const user = await users.findByUsername(username, id);
+    const user = await users.findByUsername(username, id || "");
 
     if (!user) {
       context.response.status = 400;
@@ -261,7 +266,7 @@ class Controller {
     }
   }
 
-  async getAll(context: any) {
+  async getAll(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const _users = new Users(db, mongo);
     const users = await _users.findAll();
@@ -274,7 +279,7 @@ class Controller {
     }
   }
 
-  async requestReset(context: any) {
+  async requestReset(context: StandardContext) {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
@@ -324,7 +329,7 @@ class Controller {
     }).catch(console.error);
   }
 
-  async passwordReset(context: any) {
+  async passwordReset(context: StandardContext) {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
@@ -363,7 +368,7 @@ class Controller {
     }
   }
 
-  async newsletter(context: any) {
+  async newsletter(context: StandardContext) {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
@@ -396,7 +401,7 @@ class Controller {
     context.response.body = { message: "User subscribed" };
   }
 
-  async unsubscribeNewsletter(context: any) {
+  async unsubscribeNewsletter(context: StandardContext) {
     const { db, mongo } = context.state;
     const { id } = context.params;
     const existing = await db.query("SELECT * FROM newsletters WHERE id = ?", [
