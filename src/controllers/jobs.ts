@@ -1,5 +1,7 @@
+import type { StandardContext, AuthorisedContext } from "../types/context.ts";
+
 class Controller {
-  async post(context: any) {
+  async post(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
@@ -50,7 +52,7 @@ class Controller {
     context.response.body = data;
   }
 
-  async delete(context: any) {
+  async delete(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.params.id;
 
@@ -62,7 +64,7 @@ class Controller {
     context.response.body = { message: "Job has been deleted" };
   }
 
-  async getMyJobs(context: any) {
+  async getMyJobs(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.state.user.id;
     const all = await db.queryEntries("SELECT * FROM jobs WHERE user_id = ?", [
@@ -72,7 +74,7 @@ class Controller {
     context.response.body = all;
   }
 
-  async getAll(context: any) {
+  async getAll(context: StandardContext) {
     const db = context.state.db;
     const all = await db.queryEntries(`
         SELECT j.*, u.username FROM jobs as j
@@ -82,7 +84,7 @@ class Controller {
     context.response.body = all;
   }
 
-  async getByTag(context: any) {
+  async getByTag(context: StandardContext) {
     const db = context.state.db;
     const tag = context.params.tag.replace(/-+/g, " ");
 
@@ -97,7 +99,7 @@ class Controller {
     context.response.body = all;
   }
 
-  async getByUsername(context: any) {
+  async getByUsername(context: StandardContext) {
     const db = context.state.db;
     const { username } = context.params;
 
@@ -111,7 +113,7 @@ class Controller {
 
     context.response.body = all;
   }
-  async getOne(context: any) {
+  async getOne(context: StandardContext) {
     const db = context.state.db;
     // const id = context.state.user.id;
     const job_id = context.params.id;
@@ -138,7 +140,7 @@ class Controller {
     context.response.body = data;
   }
 
-  async update(context: any) {
+  async update(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);

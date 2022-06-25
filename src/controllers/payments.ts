@@ -5,6 +5,7 @@ import Billing from "../models/billing.ts";
 import { config, Stripe } from "../deps.ts";
 import verifyStripeWebhook from "../utils/verifyStripeWebhook.ts";
 import verifyCoinpaymentsWebhook from "../utils/verifyCoinpaymentsWebhook.ts";
+import type { StandardContext, AuthorisedContext } from "../types/context.ts";
 
 const ENV = config();
 
@@ -14,10 +15,10 @@ const stripe = new Stripe(ENV.STRIPE_SK, {
 });
 
 class Controller {
-  async createSubscription(context: any) {
+  async createSubscription(context: AuthorisedContext) {
     const { db, mongo } = context.state;
-		const users = new Users(db, mongo);
-		const plans = new Plans(db, mongo);
+    const users = new Users(db, mongo);
+    const plans = new Plans(db, mongo);
     const user: any = await users.find(context.state.user.id);
     const { planID } = JSON.parse(await context.request.body().value);
     const planData: any = await plans.find(planID);
@@ -94,9 +95,9 @@ class Controller {
     }
   }
 
-  async cancelSubscription(context: any) {
+  async cancelSubscription(context: AuthorisedContext) {
     const { db, mongo } = context.state;
-		const billing = new Billing(db, mongo);
+    const billing = new Billing(db, mongo);
     const sub: any = await billing.find(context.state.user.id);
     if (sub.status == "canceled" || sub.cancel_at_period_end == true)
       return (context.response.body = {
@@ -115,16 +116,16 @@ class Controller {
     }
   }
 
-  async webhook(context: any) {
+  async webhook(context: StandardContext) {
     const { db, mongo } = context.state;
-		const users = new Users(db, mongo);
-		const billing = new Billing(db, mongo);
+    const users = new Users(db, mongo);
+    const billing = new Billing(db, mongo);
     const rawBody = await context.request.body({ type: "text" }).value;
     const parsedBody = await context.request.body().value;
 
     const verified = verifyStripeWebhook(
       ENV.STRIPE_WEBHOOK_SECRET,
-      context.request.headers.get("stripe-signature"),
+      context.request.headers.get("stripe-signature") || "",
       rawBody
     );
 
@@ -193,17 +194,17 @@ class Controller {
     context.response.status = 200;
   }
 
-  async coinpaymentsWebhook(context: any) {
+  async coinpaymentsWebhook(context: StandardContext) {
     const { db, mongo } = context.state;
-		const users = new Users(db, mongo);
-		const billing = new Billing(db, mongo);
-		const plans = new Plans(db, mongo);
+    const users = new Users(db, mongo);
+    const billing = new Billing(db, mongo);
+    const plans = new Plans(db, mongo);
     const rawBody = await context.request.body({ type: "text" }).value;
     const parsedBody = await context.request.body().value;
 
     const verified = verifyCoinpaymentsWebhook(
       ENV.COINPAYMENTS_WEBHOOK_SECRET,
-      context.request.headers.get("HMAC"),
+      context.request.headers.get("HMAC") || "",
       rawBody
     );
 

@@ -1,12 +1,14 @@
-import { DB, MongoClient } from "../db.ts";
+import { config, DB, Mongo } from "../deps.ts";
 import Users from "../models/users.ts";
 
-const db = new DB('database.sqlite');
-const client = new MongoClient();
-const mongo = await client.connect("mongodb://127.0.0.1:27017");
+const ENV = config();
+
+const db = new DB("database.sqlite");
+const client = new Mongo.MongoClient();
+const mongo = await client.connect(ENV.MONGO_CONNECTION_STRING);
 
 export const checkPerms = async (userID: string, type: string) => {
-	const users = new Users(db, mongo)
+  const users = new Users(db, mongo);
   const user: any = await users.find(userID);
   if (!user) return false;
 
@@ -29,8 +31,8 @@ export const checkPerms = async (userID: string, type: string) => {
     [userID]
   );
 
-	db.close();
-	client.close();
+  db.close();
+  client.close();
   const currentCount = all.filter((job) => job.type == type).length;
 
   if (currentCount + 1 > maxProfiles) return false;

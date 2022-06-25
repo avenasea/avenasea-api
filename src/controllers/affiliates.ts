@@ -1,10 +1,15 @@
 import { bcrypt } from "../deps.ts";
 import Users from "../models/users.ts";
+import type {
+  StandardContext,
+  AuthorisedContext,
+  OptionallyAuthorisedContext,
+} from "../types/context.ts";
 
 class Controller {
-  async register(context: any) {
+  async register(context: AuthorisedContext) {
     const db = context.state.db;
-		const users = new Users(db);
+    const users = new Users(db);
     const body = JSON.parse(await context.request.body().value);
     const existing = await db.query("SELECT * FROM users WHERE email = ?", [
       body.email,
@@ -42,10 +47,10 @@ class Controller {
     context.response.body = { message: "User created" };
   }
 
-  async update(context: any) {
+  async update(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.state.user.id;
-		const users = new Users(db);
+    const users = new Users(db);
     const user = await users.find(id);
 
     if (!user) {
@@ -147,9 +152,9 @@ class Controller {
     context.response.body = { message: "User updated" };
   }
 
-  async login(context: any) {
+  async login(context: AuthorisedContext) {
     const db = context.state.db;
-		const users = new User(db);
+    const users = new User(db);
     const body = JSON.parse(await context.request.body().value);
     let user: any;
 
@@ -217,11 +222,11 @@ class Controller {
     }
   }
 
-  async getMe(context: any) {
+  async getMe(context: AuthorisedContext) {
     //get user id from jwt
     const db = context.state.db;
     const id = context.state.user.id;
-		const users = new Users(db);
+    const users = new Users(db);
     const user: any = await users.find(id);
     if (typeof user === "undefined") {
       context.response.status = 400;
@@ -244,10 +249,10 @@ class Controller {
     }
   }
 
-  async getUsername(context: any) {
+  async getUsername(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.state.user?.id;
-		const users = new Users(db);
+    const users = new Users(db);
     const username = context.params.username;
     const user = await users.findByUsername(username, id);
 
@@ -259,9 +264,9 @@ class Controller {
     }
   }
 
-  async getAll(context: any) {
+  async getAll(context: AuthorisedContext) {
     const db = context.state.db;
-		const _users = new Users(db)
+    const _users = new Users(db);
     const users = await _users.findAll();
 
     if (!users.length) {
