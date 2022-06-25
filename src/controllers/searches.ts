@@ -1,8 +1,9 @@
 import Users from "../models/users.ts";
 import { checkPerms } from "../middleware/perms.ts";
+import type { StandardContext, AuthorisedContext } from "../types/context.ts";
 
 class Controller {
-  async post(context: any) {
+  async post(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
@@ -55,7 +56,7 @@ class Controller {
     context.response.body = data;
   }
 
-  async delete(context: any) {
+  async delete(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const id = context.params.id;
 
@@ -67,7 +68,7 @@ class Controller {
     context.response.body = { message: "Search has been deleted" };
   }
 
-  async getAll(context: any) {
+  async getAll(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const id = context.state.user.id;
     const type = context.request.url.searchParams.get("type") || "job";
@@ -79,7 +80,7 @@ class Controller {
     context.response.body = all;
   }
 
-  async getByTag(context: any) {
+  async getByTag(context: StandardContext) {
     const { db, mongo } = context.state;
     const tag = context.params.tag.replace(/-+/g, " ");
 
@@ -94,7 +95,7 @@ class Controller {
     context.response.body = all;
   }
 
-  async getByUsername(context: any) {
+  async getByUsername(context: StandardContext) {
     const { db, mongo } = context.state;
     const { username } = context.params;
 
@@ -109,14 +110,14 @@ class Controller {
     context.response.body = all;
   }
 
-  async getCandidates(context: any) {
+  async getCandidates(context: AuthorisedContext) {
     // todo
     // get search obj
     // find other searches (type job) where positive and negative match
     // join on user
     // return users
     const { db, mongo } = context.state;
-		const users = new Users(db, mongo);
+    const users = new Users(db, mongo);
     const id = context.state.user.id;
     const search_id = context.params.id;
     console.log(id, search_id);
@@ -142,7 +143,7 @@ class Controller {
     const pWords = <[]>positive.map((p: any) => p.word);
     const nWords = <[]>negative.map((n: any) => n.word);
     console.log("pWords", pWords);
-    const args = [].concat(pWords, nWords, id);
+    const args = ([] as string[]).concat(pWords, nWords, id);
     console.log("args", args);
     /*
     const searches = await db.queryEntries(
@@ -195,7 +196,7 @@ class Controller {
     context.response.body = searches;
   }
 
-  async getOne(context: any) {
+  async getOne(context: StandardContext) {
     const { db, mongo } = context.state;
     // const id = context.state.user.id;
     const search_id = context.params.id;
@@ -222,7 +223,7 @@ class Controller {
     context.response.body = data;
   }
 
-  async update(context: any) {
+  async update(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);

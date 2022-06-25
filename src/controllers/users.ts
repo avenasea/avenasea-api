@@ -372,6 +372,12 @@ class Controller {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const body = JSON.parse(await context.request.body().value);
+
+    if (body.email.indexOf("@") === -1) {
+      context.response.status = 400;
+      return (context.response.body = { message: "Invalid email" });
+    }
+
     const existing = await db.query(
       "SELECT * FROM newsletters WHERE email = ?",
       [body.email]
@@ -389,7 +395,7 @@ class Controller {
       [
         users.getRandomId(),
         body.email.toLowerCase(),
-        body.name.toLowerCase(),
+        body.name?.toLowerCase(),
         users.getCurrentTime(),
         users.getCurrentTime(),
         body.contactme,
