@@ -1,30 +1,30 @@
 import { Mongo } from "../../deps.ts";
 
-type dbID = string;
-type fieldKey = string;
+type DbID = string;
+type FieldKey = string;
 
 export default class Contract {
   constructor(
     // TODO: add createdAt
     public name: string,
     public parties: {
-      userID: dbID;
+      userID: DbID;
       creator: boolean;
     }[],
     public JSONschema: Record<any, any>,
-    public currentData: Record<fieldKey, any>,
+    public currentData: Record<FieldKey, any>,
     public changeHistory?: Record<
-      fieldKey,
+      FieldKey,
       {
         timestamp: Date;
-        userID: dbID;
+        userID: DbID;
         changedFrom: string;
         changedTo: string;
       }[]
     >,
     public comments?: Record<
-      string,
-      { text: string; timestamp: Date; userID: string }
+      FieldKey,
+      { text: string; timestamp: Date; userID: string }[]
     >,
     public id?: Mongo.ObjectId
   ) {}
