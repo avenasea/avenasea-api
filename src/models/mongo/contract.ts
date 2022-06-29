@@ -13,15 +13,14 @@ export default class Contract {
     }[],
     public JSONschema: Record<any, any>,
     public currentData: Record<FieldKey, any>,
-    public changeHistory?: Record<
-      FieldKey,
-      {
+    public changeHistory: {
+      [key: string]: Array<{
         timestamp: Date;
         userID: DbID;
         changedFrom: string;
         changedTo: string;
-      }[]
-    >,
+      }>;
+    },
     public comments?: Record<
       FieldKey,
       { text: string; timestamp: Date; userID: string }[]
