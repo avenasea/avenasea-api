@@ -41,15 +41,63 @@ class Controller {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
 
-    const contract = await mongo
+    const contract = (await mongo
       .collection("contracts")
-      .findOne({ _id: new Mongo.ObjectId(contractID) });
+      .findOne({ _id: new Mongo.ObjectId(contractID) })) as Contract;
     console.log(contract);
 
     // TODO: handle not found
 
     context.response.status = 200;
     context.response.body = contract;
+  }
+  async updateField(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
+    const contractID = context.params.contractID;
+    const body = JSON.parse(await context.request.body().value);
+
+    // TODO: authorization
+
+    const contract = await mongo.collection("contracts").findOne(
+      {
+        _id: new Mongo.ObjectId(contractID),
+      },
+      {
+        projection: {
+          [`currentData.${body.fieldName}`]: 1,
+        },
+      }
+    );
+
+    if (typeof contract == "undefined") {
+      context.response.status = 404;
+      context.response.body = {
+        message: "contract not founds",
+      };
+      return;
+    }
+
+    const changeData: Contract["changeHistory"]["key"][0] = {
+      timestamp: new Date(),
+      userID: context.state.user.id,
+      changedFrom: contract.currentData[body.fieldName],
+      changedTo: body.value,
+    };
+
+    await mongo.collection("contracts").updateOne(
+      { _id: new Mongo.ObjectId(contractID) },
+      {
+        $set: {
+          [`currentData.${body.fieldName}`]: body.value,
+        },
+        $push: {
+          [`changeHistory.${body.fieldName}`]: { $each: [changeData] },
+        },
+      }
+    );
+
+    context.response.status = 200;
+    context.response.body = changeData;
   }
 }
 
