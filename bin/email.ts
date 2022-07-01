@@ -41,7 +41,7 @@ interface CraigsResult {
   htm: string;
 }
 
-async function getSerps(q: string): Promise<any> {
+async function getSerps(q: string, user: any): Promise<any> {
   let txt: string = "";
   let htm: string = "";
   let data: any = {};
@@ -96,8 +96,10 @@ ${host}
 ==========================`;
   }
 
-  data.organic_results?.map((item: any) => {
+  data.organic_results?.map(async (item: any) => {
     const { title, link, snippet } = item;
+    await insertSearch(title, link, user);
+
     txt += `
 ${title}
 	${link}
@@ -114,7 +116,7 @@ ${title}
   return { txt, htm };
 }
 
-async function getCraigslist(q: string): Promise<CraigsResult> {
+async function getCraigslist(q: string, user: any): Promise<CraigsResult> {
   let txt = "";
   let htm = "";
   const remote = true;
@@ -193,6 +195,15 @@ async function getCraigslist(q: string): Promise<CraigsResult> {
 
   for (const result of results) {
     if (!result) continue;
+    // todo insert into search_history here
+    const { title, urls } = result;
+
+    if (title.length && urls.length) {
+      for (const url of urls) {
+        await insertSearch(title, url, user);
+      }
+    }
+
     console.log("htm: ", htm);
     htm += `
 			<h4 title="${q}">${result?.title}</h4>
@@ -275,6 +286,20 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
   return { body, url };
 }
 
+async function insertSearch(title: string, url: string, user: any) {
+  console.log("inserting search: ", url);
+  await db.query(
+    "INSERT INTO search_history (id, user_id, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+    [
+      crypto.randomUUID(),
+      user.id,
+      title.trim(),
+      url.trim(),
+      new Date().toISOString(),
+    ]
+  );
+}
+
 async function sendEmail(
   email: string,
   name: string,
@@ -353,7 +378,7 @@ for (const user of users) {
       if (!pos.length) continue;
 
       const q = `${site}${neg}${pos}`.trim();
-      const { txt, htm } = await getSerps(q);
+      const { txt, htm } = await getSerps(q, user);
       if (!htm || !txt) continue;
       console.log(user.email, search.name, q);
 
@@ -368,7 +393,7 @@ for (const user of users) {
       // todo: remove me
       //const q = `${neg}${pos}`.trim();
       const q = `${pos}`.trim();
-      const { txt, htm } = await getCraigslist(q);
+      const { txt, htm } = await getCraigslist(q, user);
       console.log("craigslist found: ", txt);
 
       text += txt;

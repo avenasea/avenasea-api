@@ -11,6 +11,7 @@ router
     validateJWT,
     controller.getCandidates.bind(controller)
   )
+  .get("/searches/history", controller.getAllHistory.bind(controller))
   .get("/searches/:id", controller.getOne.bind(controller))
   .put("/searches/:id", validateJWT, controller.update.bind(controller))
   .get("/searches/tags/:tag", controller.getByTag.bind(controller))

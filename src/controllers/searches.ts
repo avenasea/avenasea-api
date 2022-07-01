@@ -264,6 +264,21 @@ class Controller {
     context.response.status = 201;
     context.response.body = data;
   }
+
+  async getAllHistory(context: AuthorisedContext) {
+    const { db, mongo } = context.state;
+    const today = new Date();
+    const prevSunday = new Date(today.valueOf()) || new Date();
+    prevSunday.setDate(prevSunday.getDate() - ((prevSunday.getDay() + 7) % 7));
+
+    console.log("today: ", today, "prev sunday: ", prevSunday);
+    const all = await db.queryEntries(
+      "SELECT * FROM search_history WHERE created_at > ?",
+      [prevSunday]
+    );
+
+    context.response.body = all;
+  }
 }
 
 export default new Controller();
