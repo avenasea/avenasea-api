@@ -13,6 +13,7 @@ class Controller {
 
       const item = new Contract(
         body.name,
+        new Date(),
         [
           {
             userID: context.state.user.id,
