@@ -5,8 +5,8 @@ type FieldKey = string;
 
 export default class Contract {
   constructor(
-    // TODO: add createdAt
     public name: string,
+    public createdAt: Date,
     public parties: {
       userID: DbID;
       creator: boolean;
@@ -14,7 +14,7 @@ export default class Contract {
     public JSONschema: Record<any, any>,
     public currentData: Record<FieldKey, any>,
     public changeHistory: {
-      [key: string]: Array<{
+      [key: FieldKey]: Array<{
         timestamp: Date;
         userID: DbID;
         changedFrom: string;
