@@ -11,7 +11,7 @@ class Controller {
     const data: any = {};
     const search_id = crypto.randomUUID();
 
-    if ((await checkPerms(id, type)) == false) {
+    if ((await checkPerms(id, type, db)) == false) {
       context.response.status = 403;
       context.response.body = {
         message: "User is not a paid subscriber",

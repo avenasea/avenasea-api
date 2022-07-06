@@ -3,11 +3,11 @@ import Users from "../models/users.ts";
 
 const ENV = config();
 
-const db = new DB("database.sqlite");
+//const db = new DB("database.sqlite");
 const client = new Mongo.MongoClient();
 const mongo = await client.connect(ENV.MONGO_CONNECTION_STRING);
 
-export const checkPerms = async (userID: string, type: string) => {
+export const checkPerms = async (userID: string, type: string, db: DB) => {
   const users = new Users(db, mongo);
   const user: any = await users.find(userID);
   if (!user) return false;
@@ -31,7 +31,7 @@ export const checkPerms = async (userID: string, type: string) => {
     [userID]
   );
 
-  db.close();
+  //db.close();
   client.close();
   const currentCount = all.filter((job) => job.type == type).length;
 
