@@ -96,7 +96,7 @@ ${host}
 ==========================`;
   }
 
-  data.organic_results?.map(async (item: any) => {
+  for (const item of data.organic_results) {
     const { title, link, snippet } = item;
     await insertSearch(title, link, user);
 
@@ -109,7 +109,7 @@ ${title}
     htm += `
 	<li><a href="${link}" target="_new">${title}</a><p>${snippet}</p></li>
 `;
-  });
+  }
 
   htm += "</ol>";
 
