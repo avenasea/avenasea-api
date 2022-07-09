@@ -25,6 +25,7 @@ const UAs = [
 const sites = ats;
 
 const db = new DB("database.sqlite");
+await db.query("PRAGMA busy_timeout = 30000");
 
 interface WhateverResult {
   title: string;

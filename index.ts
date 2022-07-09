@@ -23,6 +23,7 @@ await client.connect(env.MONGO_CONNECTION_STRING);
 const mongoDB: Mongo.Database = client.database(env.MONGO_DB_NAME);
 
 app.use(async (ctx, next) => {
+  await db.query("PRAGMA busy_timeout = 30000");
   ctx.state.db = db;
   ctx.state.mongo = mongoDB;
   await next();
