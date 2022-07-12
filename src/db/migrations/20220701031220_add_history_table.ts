@@ -10,10 +10,10 @@ export default class extends AbstractMigration<ClientSQLite> {
     await this.client.query(`CREATE TABLE IF NOT EXISTS search_history (
 				id string primary key,
 				user_id string,
-                title string,
-                url string,
-                created_at text
-            )`);
+        title string,
+        url string,
+        created_at text
+      )`);
   }
 
   /** Runs on rollback */

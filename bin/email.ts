@@ -39,7 +39,7 @@ interface CraigsResult {
   htm: string;
 }
 
-async function getSerps(q: string, user: any): Promise<any> {
+async function getSerps(q: string, search: any, user: any): Promise<any> {
   let txt: string = "";
   let htm: string = "";
   let data: any = {};
@@ -96,7 +96,7 @@ ${host}
 
   for (const item of data.organic_results) {
     const { title, link, snippet } = item;
-    await insertSearch(title, link, user);
+    await insertSearch(title, link, search, user);
 
     txt += `
 ${title}
@@ -114,7 +114,11 @@ ${title}
   return { txt, htm };
 }
 
-async function getCraigslist(q: string, user: any): Promise<CraigsResult> {
+async function getCraigslist(
+  q: string,
+  search: any,
+  user: any
+): Promise<CraigsResult> {
   let txt = "";
   let htm = "";
   const remote = true;
@@ -198,7 +202,7 @@ async function getCraigslist(q: string, user: any): Promise<CraigsResult> {
 
     if (title.length && urls.length) {
       for (const url of urls) {
-        await insertSearch(title, url, user);
+        await insertSearch(title, url, search, user);
       }
     }
 
@@ -284,16 +288,22 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
   return { body, url };
 }
 
-async function insertSearch(title: string, url: string, user: any) {
+async function insertSearch(
+  title: string,
+  url: string,
+  search: any,
+  user: any
+) {
   const db = new DB("database.sqlite");
-  await db.query("PRAGMA busy_timeout = 30000");
+  // await db.query("PRAGMA busy_timeout = 30000");
 
   console.log("inserting search: ", url);
   await db.query(
-    "INSERT INTO search_history (id, user_id, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO search_history (id, user_id, search_id, title, url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     [
       crypto.randomUUID(),
       user.id,
+      search.id,
       title.trim(),
       url.trim(),
       new Date().toISOString(),
@@ -393,7 +403,7 @@ for (const user of users) {
       if (!pos.length) continue;
 
       const q = `${site}${neg}${pos}`.trim();
-      const { txt, htm } = await getSerps(q, user);
+      const { txt, htm } = await getSerps(q, search, user);
       if (!htm || !txt) continue;
       console.log(user.email, search.name, q);
 
@@ -408,7 +418,7 @@ for (const user of users) {
       // todo: remove me
       //const q = `${neg}${pos}`.trim();
       const q = `${pos}`.trim();
-      const { txt, htm } = await getCraigslist(q, user);
+      const { txt, htm } = await getCraigslist(q, search, user);
       console.log("craigslist found: ", txt);
 
       text += txt;
