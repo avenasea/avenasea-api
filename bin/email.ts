@@ -24,9 +24,6 @@ const UAs = [
 ];
 const sites = ats;
 
-const db = new DB("database.sqlite");
-await db.query("PRAGMA busy_timeout = 30000");
-
 interface WhateverResult {
   title: string;
   urls: string[];
@@ -288,6 +285,9 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
 }
 
 async function insertSearch(title: string, url: string, user: any) {
+  const db = new DB("database.sqlite");
+  await db.query("PRAGMA busy_timeout = 30000");
+
   console.log("inserting search: ", url);
   await db.query(
     "INSERT INTO search_history (id, user_id, title, url, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -299,6 +299,8 @@ async function insertSearch(title: string, url: string, user: any) {
       new Date().toISOString(),
     ]
   );
+
+  db.close();
 }
 
 async function sendEmail(
@@ -339,6 +341,9 @@ async function sendEmail(
 
 let users = [];
 
+const db = new DB("database.sqlite");
+await db.query("PRAGMA busy_timeout = 30000");
+
 if (args.email) {
   users = await db.queryEntries("SELECT * FROM users WHERE email = ?", [
     args.email,
@@ -347,6 +352,7 @@ if (args.email) {
   users = await db.queryEntries("SELECT * FROM users");
 }
 
+db.close();
 console.log(users);
 
 for (const user of users) {
@@ -354,14 +360,21 @@ for (const user of users) {
 
   if (args.email && user.email !== args.email) continue;
 
+  const db = new DB("database.sqlite");
+  await db.query("PRAGMA busy_timeout = 30000");
+
   const searches = await db.queryEntries(
     "SELECT * from searches WHERE user_id = ? AND type = 'job'",
     [user.id as QueryParameter]
   );
 
+  db.close();
   for (const search of searches as RowObject[]) {
     let text: string = "";
     let html: string = "";
+
+    const db = new DB("database.sqlite");
+    await db.query("PRAGMA busy_timeout = 30000");
 
     const positive = await db.queryEntries(
       "SELECT * from positive WHERE search_id = ?",
@@ -372,6 +385,7 @@ for (const user of users) {
       [search.id as QueryParameter]
     );
 
+    db.close();
     for (const site of sites) {
       const neg = negative.map((n) => " -" + n.word).join("");
       const pos = positive.map((p) => " " + p.word).join("");
