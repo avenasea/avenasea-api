@@ -284,7 +284,7 @@ class Controller {
     console.log("today: ", today, "prev sunday: ", prevSunday);
     const all = await db.queryObject(
       "SELECT * FROM search_history WHERE created_at > ?",
-      prevSunday
+      prevSunday.toISOString()
     );
 
     context.response.body = all;
