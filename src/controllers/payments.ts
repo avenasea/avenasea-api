@@ -19,9 +19,9 @@ class Controller {
     const { db, mongo } = context.state;
     const users = new Users(db, mongo);
     const plans = new Plans(db, mongo);
-    const user: any = await users.find(context.state.user.id);
+    const user: any = users.find(context.state.user.id);
     const { planID } = JSON.parse(await context.request.body().value);
-    const planData: any = await plans.find(planID);
+    const planData: any = plans.find(planID);
 
     if (!user || !planData || user.status == "active")
       return (context.response.status = 500);
@@ -32,12 +32,14 @@ class Controller {
           email: user.email,
         });
         user.stripe_customer_id = customer.id;
-        await db.query(
+        db.queryObject(
           `UPDATE users SET
            updated_at = ?,
            stripe_customer_id = ?
         WHERE id = ?`,
-          [users.getCurrentTime(), user.stripe_customer_id, user.id]
+          users.getCurrentTime(),
+          user.stripe_customer_id,
+          user.id
         );
       } catch (err) {
         console.error(err);
@@ -98,7 +100,7 @@ class Controller {
   async cancelSubscription(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const billing = new Billing(db, mongo);
-    const sub: any = await billing.find(context.state.user.id);
+    const sub: any = billing.find(context.state.user.id);
     if (sub.status == "canceled" || sub.cancel_at_period_end == true)
       return (context.response.body = {
         error: "subscription already canceled",
@@ -212,11 +214,11 @@ class Controller {
 
     // payment complete
     if (parsedBody.get("status") >= 100) {
-      const user: any = await users.find(parsedBody.get("invoice"));
+      const user: any = users.find(parsedBody.get("invoice"));
       if (!user) return;
 
-      let existing: any = await billing.find(user.id).catch(console.error);
-      const planData: any = await plans.find(parsedBody.get("item_number"));
+      let existing: any = billing.find(user.id);
+      const planData: any = plans.find(parsedBody.get("item_number"));
 
       if (
         !existing ||

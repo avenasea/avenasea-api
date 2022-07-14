@@ -96,7 +96,7 @@ ${host}
 
   for (const item of data.organic_results) {
     const { title, link, snippet } = item;
-    await insertSearch(title, link, search, user);
+    insertSearch(title, link, search, user);
 
     txt += `
 ${title}
@@ -202,7 +202,7 @@ async function getCraigslist(
 
     if (title.length && urls.length) {
       for (const url of urls) {
-        await insertSearch(title, url, search, user);
+        insertSearch(title, url, search, user);
       }
     }
 
@@ -288,26 +288,19 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
   return { body, url };
 }
 
-async function insertSearch(
-  title: string,
-  url: string,
-  search: any,
-  user: any
-) {
+function insertSearch(title: string, url: string, search: any, user: any) {
   const db = new DB("database.sqlite");
-  // await db.query("PRAGMA busy_timeout = 30000");
+  // await db.queryObject("PRAGMA busy_timeout = 30000");
 
   console.log("inserting search: ", url);
-  await db.query(
+  db.queryObject(
     "INSERT INTO search_history (id, user_id, search_id, title, url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [
-      crypto.randomUUID(),
-      user.id,
-      search.id,
-      title.trim(),
-      url.trim(),
-      new Date().toISOString(),
-    ]
+    crypto.randomUUID(),
+    user.id,
+    search.id,
+    title.trim(),
+    url.trim(),
+    new Date().toISOString()
   );
 
   db.close();
@@ -352,14 +345,12 @@ async function sendEmail(
 let users = [];
 
 const db = new DB("database.sqlite");
-await db.query("PRAGMA busy_timeout = 30000");
+db.queryObject("PRAGMA busy_timeout = 30000");
 
 if (args.email) {
-  users = await db.queryEntries("SELECT * FROM users WHERE email = ?", [
-    args.email,
-  ]);
+  users = db.queryObject("SELECT * FROM users WHERE email = ?", args.email);
 } else {
-  users = await db.queryEntries("SELECT * FROM users");
+  users = db.queryObject("SELECT * FROM users");
 }
 
 db.close();
@@ -371,11 +362,11 @@ for (const user of users) {
   if (args.email && user.email !== args.email) continue;
 
   const db = new DB("database.sqlite");
-  await db.query("PRAGMA busy_timeout = 30000");
+  db.queryObject("PRAGMA busy_timeout = 30000");
 
-  const searches = await db.queryEntries(
+  const searches = db.queryObject(
     "SELECT * from searches WHERE user_id = ? AND type = 'job'",
-    [user.id as QueryParameter]
+    user.id as QueryParameter
   );
 
   db.close();
@@ -384,15 +375,15 @@ for (const user of users) {
     let html: string = "";
 
     const db = new DB("database.sqlite");
-    await db.query("PRAGMA busy_timeout = 30000");
+    db.queryObject("PRAGMA busy_timeout = 30000");
 
-    const positive = await db.queryEntries(
+    const positive = db.queryObject(
       "SELECT * from positive WHERE search_id = ?",
-      [search.id as QueryParameter]
+      search.id as QueryParameter
     );
-    const negative = await db.queryEntries(
+    const negative = db.queryObject(
       "SELECT * from negative WHERE search_id = ?",
-      [search.id as QueryParameter]
+      search.id as QueryParameter
     );
 
     db.close();

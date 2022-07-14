@@ -1,31 +1,33 @@
-
-import { DB, MongoDatabase } from '../deps.ts';
+import { DB, MongoDatabase } from "../deps.ts";
 
 class Plans {
-	db: DB;
-	mongo: MongoDatabase;
+  db: DB;
+  mongo: MongoDatabase;
 
-	constructor(db: any, mongo: any) {
-		this.db = db;
-		this.mongo = mongo;
-	}
-
-  async find(id: number) {
-    const query = this.db.prepareQuery<any[]>(`
-      SELECT
-      *
-      FROM plans WHERE id = :id`);
-
-    return await query.oneEntry({ id });
+  constructor(db: any, mongo: any) {
+    this.db = db;
+    this.mongo = mongo;
   }
 
-  async findAll() {
-    const query = this.db.prepareQuery<any[]>(`
+  find(id: number) {
+    const query = this.db.queryObject<any>(
+      `
+      SELECT
+      *
+      FROM plans WHERE id = :id`,
+      { id }
+    )[0];
+
+    return query;
+  }
+
+  findAll() {
+    const query = this.db.queryObject<any>(`
       SELECT
       *
       FROM plans`);
 
-    return await query.allEntries();
+    return query;
   }
 }
 

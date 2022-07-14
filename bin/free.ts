@@ -1,5 +1,5 @@
 import { parse } from "https://deno.land/std/flags/mod.ts";
-import { DB, MongoClient } from "./src/db.ts";
+import { DB, Mongo, config } from "../src/deps.ts";
 import Users from "../src/models/users.ts";
 import Billing from "../src/models/billing.ts";
 
@@ -10,17 +10,18 @@ import Billing from "../src/models/billing.ts";
 // deno run -A --unstable ./bin/free.ts --all_not_subscribed
 
 const { email, all, all_not_subscribed } = parse(Deno.args);
-const db = new DB('database.sqlite');
-const client = new MongoClient();
-const mongo = await client.connect("mongodb://127.0.0.1:27017");
+const ENV = config();
+const db = new DB("database.sqlite");
+const client = new Mongo.MongoClient();
+const mongo = await client.connect(ENV.MONGO_CONNECTION_STRING);
 const users = new Users(db, mongo);
 const billing = new Billing(db, mongo);
 
 if (email) {
-  const user: any = await users.findByEmail(email);
+  const user: any = users.findByEmail(email);
   if (!user) throw "user not found";
 
-  await billing.updateOrInsert({
+  billing.updateOrInsert({
     userID: user.id,
     status: "active",
     stripeSubscriptionID: null,
@@ -31,10 +32,10 @@ if (email) {
   });
   console.log("user updated");
 } else if (all) {
-  const userIDs: any = db.query("SELECT id FROM users");
+  const userIDs: any = db.queryObject("SELECT id FROM users");
 
-  userIDs.forEach(async ([id]: any) => {
-    await billing.updateOrInsert({
+  userIDs.forEach(([id]: any) => {
+    billing.updateOrInsert({
       userID: id,
       status: "active",
       stripeSubscriptionID: null,
@@ -46,13 +47,13 @@ if (email) {
   });
   console.log(`${userIDs.length} updated`);
 } else if (all_not_subscribed) {
-  const userIDs: any = db.query(`SELECT id
+  const userIDs: any = db.queryObject(`SELECT id
     FROM users u
     WHERE NOT EXISTS (SELECT user_id FROM billing b WHERE u.id = b.user_id AND b.status LIKE 'active');
   `);
 
-  userIDs.forEach(async ([id]: any) => {
-    await billing.updateOrInsert({
+  userIDs.forEach(([id]: any) => {
+    billing.updateOrInsert({
       userID: id,
       status: "active",
       stripeSubscriptionID: null,

@@ -26,9 +26,9 @@ export const checkPerms = async (userID: string, type: string, db: DB) => {
 
   if (maxProfiles == -1) return true;
 
-  const all = await db.queryEntries(
+  const all = await db.queryObject(
     "SELECT * FROM searches WHERE user_id = ?",
-    [userID]
+    userID
   );
 
   //db.close();

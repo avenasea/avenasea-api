@@ -11,14 +11,15 @@ class Controller {
     const db = context.state.db;
     const users = new Users(db);
     const body = JSON.parse(await context.request.body().value);
-    const existing = await db.query("SELECT * FROM users WHERE email = ?", [
-      body.email,
-    ]);
+    const existing = await db.queryObject(
+      "SELECT * FROM users WHERE email = ?",
+      body.email
+    )[0];
 
-    const userNameExisting = await db.query(
+    const userNameExisting = await db.queryObject(
       "SELECT * FROM users WHERE username = ?",
-      [body.username]
-    );
+      body.username
+    )[0];
 
     if (existing.length || userNameExisting.length) {
       context.response.status = 400;
@@ -28,19 +29,17 @@ class Controller {
     // todo:
     // handle body.affiliate code when present (look up referring user and give credit, also deduct discount from this user when paying)
     const hashedPassword = await users.hashPassword(body.password);
-    const user = await db.query(
+    const user = await db.queryObject(
       "INSERT INTO users (id, email, username, hashed_password, created_at, updated_at, contactme, phone, location) VALUES (?,?,?,?,?,?,?,?, ?)",
-      [
-        users.getRandomId(),
-        body.email.toLowerCase(),
-        body.username.toLowerCase(),
-        hashedPassword,
-        users.getCurrentTime(),
-        users.getCurrentTime(),
-        body.contactme,
-        body.phone,
-        body.location,
-      ]
+      users.getRandomId(),
+      body.email.toLowerCase(),
+      body.username.toLowerCase(),
+      hashedPassword,
+      users.getCurrentTime(),
+      users.getCurrentTime(),
+      body.contactme,
+      body.phone,
+      body.location
     );
 
     console.log("user registered! ", body.email, users.getCurrentTime());
@@ -60,9 +59,10 @@ class Controller {
 
     const body = JSON.parse(await context.request.body().value);
     if (body.newEmail) {
-      const existing = await db.query("SELECT * FROM users WHERE email = ?", [
-        body.newEmail,
-      ]);
+      const existing = await db.queryObject(
+        "SELECT * FROM users WHERE email = ?",
+        body.newEmail
+      )[0];
 
       if (existing.length) {
         context.response.status = 400;
@@ -71,10 +71,10 @@ class Controller {
     }
 
     if (body.newUsername) {
-      const userNameExisting = await db.query(
+      const userNameExisting = await db.queryObject(
         "SELECT * FROM users WHERE username = ?",
-        [body.newUsername]
-      );
+        body.newUsername
+      )[0];
 
       if (userNameExisting.length) {
         context.response.status = 400;
@@ -97,18 +97,16 @@ class Controller {
       }
 
       const hashedPassword = await users.hashPassword(body.newPassword);
-      await db.query(
+      await db.queryObject(
         "UPDATE users SET hashed_password = ?, email = ?, username = ?, updated_at = ?, contactme = ?, phone = ?, location = ? WHERE id = ?",
-        [
-          hashedPassword,
-          user.email,
-          user.username,
-          user.contactme,
-          users.getCurrentTime(),
-          user.phone,
-          user.location,
-          id,
-        ]
+        hashedPassword,
+        user.email,
+        user.username,
+        user.contactme,
+        users.getCurrentTime(),
+        user.phone,
+        user.location,
+        id
       );
     } else {
       // updating fields only
@@ -120,7 +118,7 @@ class Controller {
         user.username = body.newUsername.toLowerCase();
       }
 
-      await db.query(
+      await db.queryObject(
         `UPDATE users
            SET email = ?,
            username = ?,
@@ -129,15 +127,13 @@ class Controller {
            phone = ?,
            location = ?
         WHERE id = ?`,
-        [
-          user.email,
-          user.username,
-          users.getCurrentTime(),
-          user.contactme,
-          user.phone,
-          user.location,
-          id,
-        ]
+        user.email,
+        user.username,
+        users.getCurrentTime(),
+        user.contactme,
+        user.phone,
+        user.location,
+        id
       );
     }
 
@@ -165,7 +161,7 @@ class Controller {
     }
 
     try {
-      const query = db.prepareQuery(
+      user = db.queryObject(
         `SELECT
         id,
         email,
@@ -173,10 +169,9 @@ class Controller {
         billing.status
         FROM users
         LEFT JOIN billing ON billing.user_id = users.id
-        WHERE email = :email`
-      );
-      user = query.oneEntry({ email: body.email.toLowerCase() });
-      query.finalize();
+        WHERE email = :email`,
+        { email: body.email.toLowerCase() }
+      )[0];
     } catch (err) {
       console.error(err);
       context.response.status = 400;
@@ -201,10 +196,11 @@ class Controller {
       const token = await users.generateJwt(user.id);
       delete user.hashed_password;
 
-      await db.query("UPDATE users SET updated_at = ? WHERE email = ?", [
+      await db.queryObject(
+        "UPDATE users SET updated_at = ? WHERE email = ?",
         users.getCurrentTime(),
-        user.email,
-      ]);
+        user.email
+      );
 
       return (context.response.body = {
         user,
@@ -239,10 +235,11 @@ class Controller {
         user.renewal_date <= Math.floor(Date.now() / 1000)
       ) {
         user.status = "canceled";
-        db.query("UPDATE billing SET status = ? WHERE user_id = ?", [
+        db.queryObject(
+          "UPDATE billing SET status = ? WHERE user_id = ?",
           user.status,
-          id,
-        ]);
+          id
+        );
       }
       delete user.hashedPassword;
       context.response.body = user;

@@ -118,7 +118,7 @@ const createStripeProducts = async () => {
 
 const addToDB = (plansToAdd: Array<plan>) => {
   for (const plan of plansToAdd) {
-    db.query(
+    db.queryObject(
       `
       INSERT INTO plans (
           id,
@@ -140,4 +140,4 @@ const addToDB = (plansToAdd: Array<plan>) => {
 const plansToAdd = await createStripeProducts();
 console.log(plansToAdd);
 addToDB(plansToAdd);
-console.log(db.query("SELECT * FROM plans"));
+console.log(db.queryObject("SELECT * FROM plans"));
