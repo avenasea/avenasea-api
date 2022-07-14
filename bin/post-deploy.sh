@@ -14,7 +14,7 @@ echo "current name: $name"
 cd $HOME/www/${name}/${project}
 
 #deno compile -Ar --unstable --output ./api ./index.ts 
-deno upgrade --version 1.22.0
+deno upgrade
 deno run -Ar --unstable https://deno.land/x/nessie/cli.ts migrate
 
 sudo /etc/init.d/nginx reload
