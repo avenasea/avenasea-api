@@ -131,7 +131,7 @@ async function getCraigslist(
       remote ? "is_telecommuting=1" : ""
     }&employment_type=2&employment_type=3`;
   });
-  const pool: any = pooledMap(100, requests, (url) => {
+  const pool: any = pooledMap(20, requests, (url) => {
     try {
       return getWithFetch(url).catch(console.error);
     } catch (err) {
