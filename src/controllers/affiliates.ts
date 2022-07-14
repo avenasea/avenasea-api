@@ -150,7 +150,7 @@ class Controller {
 
   async login(context: AuthorisedContext) {
     const db = context.state.db;
-    const users = new User(db);
+    const users = new Users(db);
     const body = JSON.parse(await context.request.body().value);
     let user: any;
 

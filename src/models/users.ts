@@ -6,7 +6,7 @@ class Users {
   db: DB;
   mongo: MongoDatabase;
 
-  constructor(db: any, mongo: any) {
+  constructor(db: any, mongo?: any) {
     this.db = db;
     this.mongo = mongo;
   }
@@ -168,7 +168,7 @@ class Users {
   updatePassword(userID: string, hashedPassword: string) {
     try {
       const expiry = Date.now();
-      const query = this.db.queryObject<any[]>(
+      const query = this.db.queryObject<any>(
         `
       UPDATE users
       SET
