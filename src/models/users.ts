@@ -24,8 +24,8 @@ class Users {
     return bcrypt.hash(password, salt);
   }
 
-  async find(id: string) {
-    const query = this.db.prepareQuery<any[]>(
+  find(id: string) {
+    const query = this.db.queryObject<any>(
       `SELECT
       users.id AS id,
       email,
@@ -47,21 +47,21 @@ class Users {
       FROM users
       LEFT JOIN billing ON billing.user_id = users.id
       LEFT JOIN plans ON billing.plan_id = plans.id
-      WHERE users.id = :id`
-    );
+      WHERE users.id = :id`,
+      { id }
+    )[0];
 
-    return await query.oneEntry({ id });
+    return query;
   }
 
-  async findByUsername(username: string, id: string) {
+  findByUsername(username: string, id: string) {
     console.log("username: ", username, "id: ", id);
 
-    const query = this.db.prepareQuery<any[]>(
-      "SELECT username, email, created_at, contactme, phone, location, stripe_customer_id FROM users WHERE username = :username"
-    );
-
     try {
-      const user = await query.oneEntry({ username });
+      const user = this.db.queryObject<any>(
+        "SELECT username, email, created_at, contactme, phone, location, stripe_customer_id FROM users WHERE username = :username",
+        { username }
+      )[0];
 
       if (!user.contactme || !id) {
         delete user.email;
@@ -75,8 +75,8 @@ class Users {
     }
   }
 
-  async findAll() {
-    const users = this.db.queryEntries(
+  findAll() {
+    const users = this.db.queryObject(
       `
       SELECT u.username, u.created_at, u.email, u.phone, s.total
         FROM users u
@@ -87,41 +87,36 @@ class Users {
         ) s ON s.user_id = u.id
         ORDER BY u.created_at DESC
 `
-    );
+    )[0];
 
     return users;
   }
 
-  async findByStripeID(stripeCustomerID: string) {
-    const query = this.db.prepareQuery<any[]>(
-      "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE stripe_customer_id = :stripeCustomerID"
-    );
-
+  findByStripeID(stripeCustomerID: string) {
     try {
-      return await query.oneEntry({ stripeCustomerID });
+      return this.db.queryObject<any>(
+        "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE stripe_customer_id = :stripeCustomerID",
+        { stripeCustomerID }
+      )[0];
     } catch (err) {
       console.error(err);
       return null;
     }
   }
 
-  async findByEmail(email: string) {
-    const query = this.db.prepareQuery<
-      [],
-      {
+  findByEmail(email: string) {
+    try {
+      return this.db.queryObject<{
         id: string;
         username: string;
         created_at: string;
         contactme: number;
         phone: number;
         stripe_customer_id: string;
-      }
-    >(
-      "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE email = :email"
-    );
-
-    try {
-      return await query.oneEntry({ email });
+      }>(
+        "SELECT id, username, created_at, contactme, phone, stripe_customer_id FROM users WHERE email = :email",
+        { email }
+      )[0];
     } catch (err) {
       console.error(err);
       return null;
@@ -140,14 +135,16 @@ class Users {
 
   updatePasswordResetData(userID: string, token: string, expiry: number) {
     try {
-      const query = this.db.query<any[]>(
+      const query = this.db.queryObject<any>(
         `
       UPDATE users
       SET
       password_reset_token = ?,
       password_reset_expiry = ?
       WHERE id = ?`,
-        [token, expiry, userID]
+        token,
+        expiry,
+        userID
       );
       return query;
     } catch (err) {
@@ -155,23 +152,13 @@ class Users {
     }
   }
 
-  async getPasswordResetData({
-    token,
-    userID,
-  }: {
-    token?: string;
-    userID?: string;
-  }) {
+  getPasswordResetData({ token, userID }: { token?: string; userID?: string }) {
     try {
-      const query = this.db.prepareQuery<
-        [],
-        { id: string; password_reset_expiry: string }
-      >(
+      return this.db.queryObject<{ id: string; password_reset_expiry: string }>(
         `SELECT id, password_reset_expiry, password_reset_token FROM users WHERE ${
           token ? `password_reset_token = '${token}'` : `id = '${userID}'`
         }`
-      );
-      return await query.oneEntry();
+      )[0];
     } catch (err) {
       console.error(err);
       return null;
@@ -181,14 +168,16 @@ class Users {
   updatePassword(userID: string, hashedPassword: string) {
     try {
       const expiry = Date.now();
-      const query = this.db.query<any[]>(
+      const query = this.db.queryObject<any[]>(
         `
       UPDATE users
       SET
       hashed_password = ?,
       password_reset_expiry = ?
       WHERE id = ?`,
-        [hashedPassword, expiry, userID]
+        hashedPassword,
+        expiry,
+        userID
       );
       return query;
     } catch (err) {

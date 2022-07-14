@@ -10,34 +10,36 @@ class Controller {
     const job_id = crypto.randomUUID();
 
     // insert name of search
-    await db.query(
+    db.queryObject(
       "INSERT INTO jobs (id, user_id, title, created_at, updated_at, type, pay, contact, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [
-        job_id,
-        id,
-        title,
-        new Date().toISOString(),
-        new Date().toISOString(),
-        type,
-        pay,
-        contact,
-        description,
-      ]
+      job_id,
+      id,
+      title,
+      new Date().toISOString(),
+      new Date().toISOString(),
+      type,
+      pay,
+      contact,
+      description
     );
 
     // add positive keywords
     for (let word of positive) {
-      await db.query(
+      db.queryObject(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
+        crypto.randomUUID(),
+        job_id,
+        word.trim().toLowerCase()
       );
     }
 
     // add negative keywords
     for (let word of negative) {
-      await db.query(
+      db.queryObject(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
+        crypto.randomUUID(),
+        job_id,
+        word.trim().toLowerCase()
       );
     }
 
@@ -52,31 +54,29 @@ class Controller {
     context.response.body = data;
   }
 
-  async delete(context: AuthorisedContext) {
+  delete(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.params.id;
 
-    await db.query("DELETE FROM jobs WHERE id = ?", [id]);
-    await db.query("DELETE FROM positive WHERE search_id = ?", [id]);
-    await db.query("DELETE FROM negative WHERE search_id = ?", [id]);
+    db.queryObject("DELETE FROM jobs WHERE id = ?", id);
+    db.queryObject("DELETE FROM positive WHERE search_id = ?", id);
+    db.queryObject("DELETE FROM negative WHERE search_id = ?", id);
 
     context.response.status = 200;
     context.response.body = { message: "Job has been deleted" };
   }
 
-  async getMyJobs(context: AuthorisedContext) {
+  getMyJobs(context: AuthorisedContext) {
     const db = context.state.db;
     const id = context.state.user.id;
-    const all = await db.queryEntries("SELECT * FROM jobs WHERE user_id = ?", [
-      id,
-    ]);
+    const all = db.queryObject("SELECT * FROM jobs WHERE user_id = ?", id);
 
     context.response.body = all;
   }
 
-  async getAll(context: StandardContext) {
+  getAll(context: StandardContext) {
     const db = context.state.db;
-    const all = await db.queryEntries(`
+    const all = db.queryObject(`
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u ON j.user_id = u.id ORDER BY j.created_at DESC
     `);
@@ -84,55 +84,55 @@ class Controller {
     context.response.body = all;
   }
 
-  async getByTag(context: StandardContext) {
+  getByTag(context: StandardContext) {
     const db = context.state.db;
     const tag = context.params.tag.replace(/-+/g, " ");
 
-    const all = await db.queryEntries(
+    const all = db.queryObject(
       `
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u, positive p ON j.user_id = u.id AND j.id = p.search_id WHERE p.word = ? ORDER BY j.created_at DESC
     `,
-      [tag]
+      tag
     );
 
     context.response.body = all;
   }
 
-  async getByUsername(context: StandardContext) {
+  getByUsername(context: StandardContext) {
     const db = context.state.db;
     const { username } = context.params;
 
-    const all = await db.queryEntries(
+    const all = db.queryObject(
       `
         SELECT j.*, u.username FROM jobs as j
         INNER JOIN users u ON j.user_id = u.id  WHERE u.username = ? ORDER BY j.created_at DESC
     `,
-      [username.toLowerCase()]
+      username.toLowerCase()
     );
 
     context.response.body = all;
   }
-  async getOne(context: StandardContext) {
+  getOne(context: StandardContext) {
     const db = context.state.db;
     // const id = context.state.user.id;
     const job_id = context.params.id;
     let data =
-      (await db
-        .queryEntries(
+      db
+        .queryObject(
           "SELECT j.*, u.username FROM jobs as j INNER JOIN users u ON j.user_id = u.id WHERE j.id = ?",
-          [job_id]
+          job_id
         )
-        .pop()) || {};
+        .pop() || {};
 
-    const positive = await db.queryEntries(
+    const positive = db.queryObject(
       "SELECT word FROM positive WHERE search_id = ?",
-      [job_id]
+      job_id
     );
 
-    const negative = await db.queryEntries(
+    const negative = db.queryObject(
       "SELECT word FROM negative WHERE search_id = ?",
-      [job_id]
+      job_id
     );
 
     data.positive = positive.map((w: any) => w.word);
@@ -149,28 +149,38 @@ class Controller {
     const job_id = context.params.id;
 
     // insert name of search
-    await db.query(
+    db.queryObject(
       "UPDATE jobs SET title = ?, type = ?, contact = ?, pay = ?, description = ?, updated_at = ? WHERE id = ?",
-      [title, type, contact, pay, description, new Date().toISOString(), job_id]
+      title,
+      type,
+      contact,
+      pay,
+      description,
+      new Date().toISOString(),
+      job_id
     );
 
     // add positive keywords
-    await db.query("DELETE from positive WHERE search_id = ?", [job_id]);
+    db.queryObject("DELETE from positive WHERE search_id = ?", job_id);
 
     for (let word of positive) {
-      await db.query(
+      db.queryObject(
         "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
+        crypto.randomUUID(),
+        job_id,
+        word.trim().toLowerCase()
       );
     }
 
     // add negative keywords
-    await db.query("DELETE from negative WHERE search_id = ?", [job_id]);
+    db.queryObject("DELETE from negative WHERE search_id = ?", job_id);
 
     for (let word of negative) {
-      await db.query(
+      db.queryObject(
         "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        [crypto.randomUUID(), job_id, word.trim().toLowerCase()]
+        crypto.randomUUID(),
+        job_id,
+        word.trim().toLowerCase()
       );
     }
 

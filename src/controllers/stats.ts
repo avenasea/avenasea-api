@@ -3,15 +3,15 @@ import type { StandardContext } from "../types/context.ts";
 class Controller {
   async stats(context: StandardContext) {
     const db = context.state.db;
-    const totalUsers = await db.queryEntries(
+    const totalUsers = await db.queryObject(
       "SELECT count(*) as total from users"
     );
 
-    const totalSearches = await db.queryEntries(
+    const totalSearches = await db.queryObject(
       "SELECT count(*) as total from searches"
     );
 
-    const totalJobs = await db.queryEntries(
+    const totalJobs = await db.queryObject(
       "SELECT count(*) as total from jobs"
     );
 
@@ -29,7 +29,7 @@ class Controller {
 
   async tags(context: StandardContext) {
     const db = context.state.db;
-    const tags = await db.queryEntries(
+    const tags = await db.queryObject(
       "SELECT word, COUNT(word) as count from positive GROUP BY word ORDER BY count DESC LIMIT 50"
     );
 
@@ -42,7 +42,7 @@ class Controller {
 
   async jobTags(context: StandardContext) {
     const db = context.state.db;
-    const tags = await db.queryEntries(
+    const tags = await db.queryObject(
       `SELECT p.word, COUNT(p.word) as count from positive as p INNER JOIN jobs j ON j.id = p.search_id GROUP BY word ORDER BY count DESC LIMIT 50`
     );
 
