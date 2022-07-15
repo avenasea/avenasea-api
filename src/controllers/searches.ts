@@ -116,7 +116,9 @@ class Controller {
       prevSunday.toISOString()
     );
 
-    context.response.body = all;
+    context.response.body = all.filter((value, index, self) => {
+      return self.findIndex((v) => v.url === value.url) === index;
+    });
   }
 
   async getByUsername(context: StandardContext) {
