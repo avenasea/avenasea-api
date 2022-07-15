@@ -52,6 +52,26 @@ class Controller {
       tags,
     };
   }
+
+  async historyTags(context: StandardContext) {
+    const db = context.state.db;
+    const today = new Date();
+    const prevSunday = new Date(today.valueOf()) || new Date();
+    prevSunday.setDate(prevSunday.getDate() - ((prevSunday.getDay() + 7) % 7));
+
+    console.log("today: ", today, "prev sunday: ", prevSunday);
+
+    const tags = await db.queryObject(
+      `SELECT p.word, COUNT(p.word) as count from positive as p INNER JOIN search_history h ON h.search_id = p.search_id WHERE h.created_at > ? GROUP BY word ORDER BY count DESC LIMIT 50`,
+      prevSunday.toISOString()
+    );
+
+    context.response.status = 200;
+
+    context.response.body = {
+      tags,
+    };
+  }
 }
 
 export default new Controller();
