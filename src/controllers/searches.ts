@@ -98,6 +98,27 @@ class Controller {
     context.response.body = all;
   }
 
+  async getHistoryByTag(context: StandardContext) {
+    const { db, mongo } = context.state;
+    const tag = context.params.tag.replace(/-+/g, " ");
+    const today = new Date();
+    const prevSunday = new Date(today.valueOf()) || new Date();
+    prevSunday.setDate(prevSunday.getDate() - ((prevSunday.getDay() + 7) % 7));
+
+    console.log("today: ", today, "prev sunday: ", prevSunday);
+
+    const all = await db.queryObject(
+      `
+        SELECT h.*, p.word FROM search_history as h
+        INNER JOIN users u, positive p ON h.user_id = u.id AND h.search_id = p.search_id WHERE p.word = ? AND h.created_at > ? ORDER BY h.created_at DESC
+    `,
+      tag,
+      prevSunday.toISOString()
+    );
+
+    context.response.body = all;
+  }
+
   async getByUsername(context: StandardContext) {
     const { db, mongo } = context.state;
     const { username } = context.params;
@@ -283,9 +304,26 @@ class Controller {
 
     console.log("today: ", today, "prev sunday: ", prevSunday);
     const all = await db.queryObject(
-      "SELECT * FROM search_history WHERE created_at > ?",
+      // "SELECT * FROM search_history WHERE created_at > ?",
+
+      `
+      SELECT h.*, s.name FROM search_history as h
+        INNER JOIN users u, positive p, searches as s ON h.user_id = u.id AND h.search_id = p.search_id  AND s.id = h.search_id WHERE h.created_at > ? ORDER BY h.created_at DESC LIMIT 1000
+        `,
       prevSunday.toISOString()
     );
+
+    all.map((row) => {
+      const search_id = row.search_id;
+      console.log("search_id: ", search_id);
+
+      const positive = db.queryObject(
+        `SELECT p.word FROM positive as p WHERE p.search_id = ?`,
+        search_id
+      );
+
+      row.positive = positive.map((w) => w.word);
+    });
 
     context.response.body = all;
   }
