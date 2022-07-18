@@ -1,6 +1,7 @@
 import Users from "../models/users.ts";
 import { checkPerms } from "../middleware/perms.ts";
 import type { StandardContext, AuthorisedContext } from "../types/context.ts";
+import { getLastSunday } from "../utils/dates.ts";
 
 class Controller {
   async post(context: AuthorisedContext) {
@@ -102,8 +103,7 @@ class Controller {
     const { db, mongo } = context.state;
     const tag = context.params.tag.replace(/-+/g, " ");
     const today = new Date();
-    const prevSunday = new Date(today.valueOf()) || new Date();
-    prevSunday.setDate(prevSunday.getDate() - ((prevSunday.getDay() + 7) % 7));
+    const prevSunday = getLastSunday(today);
 
     console.log("today: ", today, "prev sunday: ", prevSunday);
 
@@ -301,8 +301,7 @@ class Controller {
   async getAllHistory(context: AuthorisedContext) {
     const { db, mongo } = context.state;
     const today = new Date();
-    const prevSunday = new Date(today.valueOf()) || new Date();
-    prevSunday.setDate(prevSunday.getDate() - ((prevSunday.getDay() + 7) % 7));
+    const prevSunday = getLastSunday(today);
 
     console.log("today: ", today, "prev sunday: ", prevSunday);
     const all = await db.queryObject(

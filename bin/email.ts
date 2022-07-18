@@ -290,7 +290,7 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
 
 function insertSearch(title: string, url: string, search: any, user: any) {
   const db = new DB("database.sqlite");
-  // await db.queryObject("PRAGMA busy_timeout = 30000");
+  db.queryObject("PRAGMA busy_timeout = 30000");
 
   console.log("inserting search: ", url);
   db.queryObject(

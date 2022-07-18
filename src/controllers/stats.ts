@@ -1,4 +1,5 @@
 import type { StandardContext } from "../types/context.ts";
+import { getLastSunday } from "../utils/dates.ts";
 
 class Controller {
   async stats(context: StandardContext) {
@@ -56,8 +57,7 @@ class Controller {
   async historyTags(context: StandardContext) {
     const db = context.state.db;
     const today = new Date();
-    const prevSunday = new Date(today.valueOf()) || new Date();
-    prevSunday.setDate(prevSunday.getDate() - ((prevSunday.getDay() + 7) % 7));
+    const prevSunday = getLastSunday(today);
 
     console.log("today: ", today, "prev sunday: ", prevSunday);
 
