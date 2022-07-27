@@ -1,28 +1,22 @@
-import { db } from "../src/db.ts";
-import { Stripe, config } from "../src/deps.ts";
+import { Stripe, config, Mongo } from "../src/deps.ts";
+import { PlanModel } from "../src/models/mongo/plans.ts";
 
 const ENV = config();
+
+const mongo: Mongo.Database = await new Mongo.MongoClient().connect(
+  ENV.MONGO_CONNECTION_STRING
+);
 
 const stripe = new Stripe(ENV.STRIPE_SK, {
   apiVersion: "2020-08-27",
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-interface plan {
-  id: number;
-  name: string;
-  cost: number;
-  billing_frequency: "monthly" | "once";
-  stripe_price_id: string;
-  job_search_profiles: number;
-  candidate_search_profiles: number;
-  type: "jobseeker" | "recruiter";
-}
-
 // check plans have correct data
-const plans: Array<plan> = [
+const plans: Array<PlanModel & { _id: string }> = [
   {
-    id: 1,
+    _id: "1",
+    id: "1",
     name: "1 job search profile",
     cost: 5, // 5 dollars
     billing_frequency: "monthly",
@@ -32,7 +26,8 @@ const plans: Array<plan> = [
     type: "jobseeker",
   },
   {
-    id: 2,
+    _id: "2",
+    id: "2",
     name: "5 job search profiles",
     cost: 20,
     billing_frequency: "monthly",
@@ -42,7 +37,8 @@ const plans: Array<plan> = [
     type: "jobseeker",
   },
   {
-    id: 3,
+    _id: "3",
+    id: "3",
     name: "Lifetime membership: unlimited job search profiles",
     cost: 400,
     billing_frequency: "once",
@@ -52,7 +48,8 @@ const plans: Array<plan> = [
     type: "jobseeker",
   },
   {
-    id: 4,
+    _id: "4",
+    id: "4",
     name: "1 candidate search profile",
     cost: 50,
     billing_frequency: "monthly",
@@ -62,7 +59,8 @@ const plans: Array<plan> = [
     type: "recruiter",
   },
   {
-    id: 5,
+    _id: "5",
+    id: "5",
     name: "5 candidate search profiles",
     cost: 200,
     billing_frequency: "monthly",
@@ -72,7 +70,8 @@ const plans: Array<plan> = [
     type: "recruiter",
   },
   {
-    id: 6,
+    _id: "6",
+    id: "6",
     name: "Lifetime membership: unlimited candidate search profiles",
     cost: 4000,
     billing_frequency: "once",
@@ -116,28 +115,13 @@ const createStripeProducts = async () => {
   return createdPlans;
 };
 
-const addToDB = (plansToAdd: Array<plan>) => {
-  for (const plan of plansToAdd) {
-    db.queryObject(
-      `
-      INSERT INTO plans (
-          id,
-          name,
-          cost,
-          billing_frequency,
-          stripe_price_id,
-          job_search_profiles,
-          candidate_search_profiles,
-          type
-      ) VALUES (?,?,?,?,?,?,?,?)`,
-      Object.values(plan)
-    );
-  }
+const addToDB = (plansToAdd: Array<PlanModel>) => {
+  mongo.collection("plans").insertMany(plansToAdd);
 };
 
 // Creates products in stripe then adds them to the db
 // The functions can be run seperately
-const plansToAdd = await createStripeProducts();
-console.log(plansToAdd);
-addToDB(plansToAdd);
-console.log(db.queryObject("SELECT * FROM plans"));
+// const plansToAdd = await createStripeProducts();
+// console.log(plansToAdd);
+addToDB(plans);
+console.log(await mongo.collection("plans").find().toArray());
