@@ -1,6 +1,6 @@
 import { config, Mongo } from "../deps.ts";
 import { Users } from "../models/mongo/users.ts";
-import { SearchModel } from "../models/mongo/Searches.ts";
+import { SearchModel } from "../models/mongo/searches.ts";
 
 const ENV = config();
 

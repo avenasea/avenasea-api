@@ -1,6 +1,6 @@
 import { checkPerms } from "../middleware/perms.ts";
 import type { StandardContext, AuthorisedContext } from "../types/context.ts";
-import { SearchModel } from "../models/mongo/Searches.ts";
+import { SearchModel } from "../models/mongo/searches.ts";
 import { PositiveModel } from "../models/mongo/positive.ts";
 import { NegativeModel } from "../models/mongo/negative.ts";
 import { SearchHistoryModel } from "../models/mongo/search_history.ts";
