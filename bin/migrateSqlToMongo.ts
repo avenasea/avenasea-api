@@ -5,7 +5,7 @@ const db = new DB("database.sqlite");
 const client = new Mongo.MongoClient();
 const mongo = await client.connect(ENV.MONGO_CONNECTION_STRING);
 
-const tables = db.queryArray`SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name;`;
+const tables = db.queryArray`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;`;
 
 for (const table of tables) {
   let all = db.queryObject(`SELECT * FROM ${table[0]}`);
