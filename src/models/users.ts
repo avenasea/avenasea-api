@@ -87,7 +87,7 @@ class Users {
         ) s ON s.user_id = u.id
         ORDER BY u.created_at DESC
 `
-    )[0];
+    );
 
     return users;
   }

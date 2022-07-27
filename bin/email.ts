@@ -1,16 +1,22 @@
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 import { pooledMap } from "https://deno.land/std/async/mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
-import { config, DB } from "../src/deps.ts";
+import { config, Mongo } from "../src/deps.ts";
 import cities from "./cities.js";
 import { ats } from "../ats.ts";
-import {
-  QueryParameter,
-  RowObject,
-} from "https://deno.land/x/sqlite@v3.2.1/src/query.ts";
+import { SearchHistoryModel } from "../src/models/mongo/search_history.ts";
+import { UserModel } from "../src/models/mongo/users.ts";
+import { SearchModel } from "../src/models/mongo/searches.ts";
+import { PositiveModel } from "../src/models/mongo/positive.ts";
+import { NegativeModel } from "../src/models/mongo/negative.ts";
 
 const ENV = config();
 const args = parse(Deno.args);
+
+const mongo: Mongo.Database = await new Mongo.MongoClient().connect(
+  ENV.MONGO_CONNECTION_STRING
+);
+
 const UAs = [
   "Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
@@ -289,21 +295,16 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
 }
 
 function insertSearch(title: string, url: string, search: any, user: any) {
-  const db = new DB("database.sqlite");
-  db.queryObject("PRAGMA busy_timeout = 30000");
-
   console.log("inserting search: ", url);
-  db.queryObject(
-    "INSERT INTO search_history (id, user_id, search_id, title, url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    crypto.randomUUID(),
-    user.id,
-    search.id,
-    title.trim(),
-    url.trim(),
-    new Date().toISOString()
-  );
-
-  db.close();
+  const data: SearchHistoryModel = {
+    id: crypto.randomUUID(),
+    user_id: user.id,
+    search_id: search.id,
+    title: title.trim(),
+    url: url.trim(),
+    created_at: new Date().toISOString(),
+  };
+  mongo.collection("search_history").insertOne(data);
 }
 
 async function sendEmail(
@@ -342,18 +343,17 @@ async function sendEmail(
   }
 }
 
-let users = [];
-
-const db = new DB("database.sqlite");
-db.queryObject("PRAGMA busy_timeout = 30000");
+let users: UserModel[] = [];
 
 if (args.email) {
-  users = db.queryObject("SELECT * FROM users WHERE email = ?", args.email);
+  users = await mongo
+    .collection<UserModel>("users")
+    .find({ email: args.email })
+    .toArray();
 } else {
-  users = db.queryObject("SELECT * FROM users");
+  users = await mongo.collection<UserModel>("users").find().toArray();
 }
 
-db.close();
 console.log(users);
 
 for (const user of users) {
@@ -361,32 +361,25 @@ for (const user of users) {
 
   if (args.email && user.email !== args.email) continue;
 
-  const db = new DB("database.sqlite");
-  db.queryObject("PRAGMA busy_timeout = 30000");
+  const searches = await mongo
+    .collection<SearchModel>("searches")
+    .find({ user_id: user.id, type: "job" })
+    .toArray();
 
-  const searches = db.queryObject(
-    "SELECT * from searches WHERE user_id = ? AND type = 'job'",
-    user.id as QueryParameter
-  );
-
-  db.close();
-  for (const search of searches as RowObject[]) {
+  for (const search of searches) {
     let text: string = "";
     let html: string = "";
 
-    const db = new DB("database.sqlite");
-    db.queryObject("PRAGMA busy_timeout = 30000");
+    const positive = await mongo
+      .collection<PositiveModel>("positive")
+      .find({ search_id: search.id })
+      .toArray();
 
-    const positive = db.queryObject(
-      "SELECT * from positive WHERE search_id = ?",
-      search.id as QueryParameter
-    );
-    const negative = db.queryObject(
-      "SELECT * from negative WHERE search_id = ?",
-      search.id as QueryParameter
-    );
+    const negative = await mongo
+      .collection<NegativeModel>("negative")
+      .find({ search_id: search.id })
+      .toArray();
 
-    db.close();
     for (const site of sites) {
       const neg = negative.map((n) => " -" + n.word).join("");
       const pos = positive.map((p) => " " + p.word).join("");

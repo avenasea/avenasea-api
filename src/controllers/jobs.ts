@@ -1,8 +1,11 @@
 import type { StandardContext, AuthorisedContext } from "../types/context.ts";
+import { JobModel } from "../models/mongo/jobs.ts";
+import { PositiveModel } from "../models/mongo/positive.ts";
+import { NegativeModel } from "../models/mongo/negative.ts";
 
 class Controller {
   async post(context: AuthorisedContext) {
-    const db = context.state.db;
+    const mongo = context.state.mongo;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, title, type, pay, contact, description } = body;
@@ -10,37 +13,37 @@ class Controller {
     const job_id = crypto.randomUUID();
 
     // insert name of search
-    db.queryObject(
-      "INSERT INTO jobs (id, user_id, title, created_at, updated_at, type, pay, contact, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      job_id,
-      id,
+    const jobData: JobModel = {
+      id: job_id,
+      user_id: id,
       title,
-      new Date().toISOString(),
-      new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       type,
       pay,
       contact,
-      description
-    );
+      description,
+    };
+    await mongo.collection("jobs").insertOne(jobData);
 
     // add positive keywords
     for (let word of positive) {
-      db.queryObject(
-        "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        crypto.randomUUID(),
-        job_id,
-        word.trim().toLowerCase()
-      );
+      const positiveData: PositiveModel = {
+        id: crypto.randomUUID(),
+        search_id: job_id,
+        word: word.trim().toLowerCase(),
+      };
+      await mongo.collection("positive").insertOne(positiveData);
     }
 
     // add negative keywords
     for (let word of negative) {
-      db.queryObject(
-        "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        crypto.randomUUID(),
-        job_id,
-        word.trim().toLowerCase()
-      );
+      const negativeData: NegativeModel = {
+        id: crypto.randomUUID(),
+        search_id: job_id,
+        word: word.trim().toLowerCase(),
+      };
+      await mongo.collection("negative").insertOne(negativeData);
     }
 
     data.positive = positive;
@@ -55,133 +58,362 @@ class Controller {
   }
 
   delete(context: AuthorisedContext) {
-    const db = context.state.db;
+    const mongo = context.state.mongo;
     const id = context.params.id;
 
-    db.queryObject("DELETE FROM jobs WHERE id = ?", id);
-    db.queryObject("DELETE FROM positive WHERE search_id = ?", id);
-    db.queryObject("DELETE FROM negative WHERE search_id = ?", id);
+    mongo.collection("jobs").deleteMany({ id: id });
+    mongo.collection("positive").deleteMany({ search_id: id });
+    mongo.collection("negative").deleteMany({ search_id: id });
 
     context.response.status = 200;
     context.response.body = { message: "Job has been deleted" };
   }
 
-  getMyJobs(context: AuthorisedContext) {
-    const db = context.state.db;
+  async getMyJobs(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
     const id = context.state.user.id;
-    const all = db.queryObject("SELECT * FROM jobs WHERE user_id = ?", id);
+    const all = await mongo
+      .collection<JobModel>("jobs")
+      .find({ user_id: id })
+      .toArray();
 
     context.response.body = all;
   }
 
-  getAll(context: StandardContext) {
-    const db = context.state.db;
-    const all = db.queryObject(`
-        SELECT j.*, u.username FROM jobs as j
-        INNER JOIN users u ON j.user_id = u.id ORDER BY j.created_at DESC
-    `);
+  async getAll(context: StandardContext) {
+    const mongo = context.state.mongo;
+    const all = await mongo
+      .collection("jobs")
+      .aggregate<JobModel & { username: string }>([
+        {
+          $lookup: {
+            from: "users",
+            localField: "user_id",
+            foreignField: "id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  username: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $unwind: {
+            path: "$user",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: ["$$ROOT", "$user"],
+            },
+          },
+        },
+        {
+          $project: {
+            user: 0,
+          },
+        },
+        {
+          $sort: {
+            created_at: -1,
+          },
+        },
+      ])
+      .toArray();
 
     context.response.body = all;
   }
 
-  getByTag(context: StandardContext) {
-    const db = context.state.db;
+  async getByTag(context: StandardContext) {
+    const mongo = context.state.mongo;
     const tag = context.params.tag.replace(/-+/g, " ");
 
-    const all = db.queryObject(
-      `
-        SELECT j.*, u.username FROM jobs as j
-        INNER JOIN users u, positive p ON j.user_id = u.id AND j.id = p.search_id WHERE p.word = ? ORDER BY j.created_at DESC
-    `,
-      tag
-    );
+    const all = await mongo
+      .collection("jobs")
+      .aggregate<JobModel & { username: string; word: string }>([
+        {
+          $lookup: {
+            from: "users",
+            localField: "user_id",
+            foreignField: "id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  username: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "positive",
+            localField: "id",
+            foreignField: "search_id",
+            as: "positive",
+            pipeline: [
+              {
+                $project: {
+                  word: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $unwind: {
+            path: "$user",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $unwind: {
+            path: "$positive",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: ["$$ROOT", "$user", "$positive"],
+            },
+          },
+        },
+        {
+          $match: {
+            word: tag,
+          },
+        },
+        {
+          $project: {
+            user: 0,
+            positive: 0,
+          },
+        },
+        {
+          $sort: {
+            created_at: -1,
+          },
+        },
+      ])
+      .toArray();
 
     context.response.body = all;
   }
 
-  getByUsername(context: StandardContext) {
-    const db = context.state.db;
+  async getByUsername(context: StandardContext) {
+    const mongo = context.state.mongo;
     const { username } = context.params;
 
-    const all = db.queryObject(
-      `
-        SELECT j.*, u.username FROM jobs as j
-        INNER JOIN users u ON j.user_id = u.id  WHERE u.username = ? ORDER BY j.created_at DESC
-    `,
-      username.toLowerCase()
-    );
+    const all = await mongo
+      .collection("jobs")
+      .aggregate<JobModel & { username: string }>([
+        {
+          $lookup: {
+            from: "users",
+            localField: "user_id",
+            foreignField: "id",
+            as: "user",
+            pipeline: [
+              {
+                $project: {
+                  username: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $unwind: {
+            path: "$user",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: ["$$ROOT", "$user"],
+            },
+          },
+        },
+        {
+          $match: {
+            username: username.toLowerCase(),
+          },
+        },
+        {
+          $project: {
+            user: 0,
+          },
+        },
+        {
+          $sort: {
+            created_at: -1,
+          },
+        },
+      ])
+      .toArray();
 
     context.response.body = all;
   }
-  getOne(context: StandardContext) {
-    const db = context.state.db;
+  async getOne(context: StandardContext) {
+    const mongo = context.state.mongo;
     // const id = context.state.user.id;
     const job_id = context.params.id;
-    let data =
-      db
-        .queryObject(
-          "SELECT j.*, u.username FROM jobs as j INNER JOIN users u ON j.user_id = u.id WHERE j.id = ?",
-          job_id
-        )
-        .pop() || {};
 
-    const positive = db.queryObject(
-      "SELECT word FROM positive WHERE search_id = ?",
-      job_id
-    );
+    const data = (
+      await mongo
+        .collection("jobs")
+        .aggregate<
+          JobModel & { username: string; positive: string; negative: string }
+        >([
+          {
+            $match: {
+              id: job_id,
+            },
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "user_id",
+              foreignField: "id",
+              as: "user",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $lookup: {
+              from: "positive",
+              localField: "id",
+              foreignField: "search_id",
+              as: "positive",
+              pipeline: [
+                {
+                  $project: {
+                    word: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $lookup: {
+              from: "negative",
+              localField: "id",
+              foreignField: "search_id",
+              as: "negative",
+              pipeline: [
+                {
+                  $project: {
+                    word: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $unwind: {
+              path: "$user",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $replaceRoot: {
+              newRoot: {
+                $mergeObjects: ["$$ROOT", "$user"],
+              },
+            },
+          },
+          {
+            $set: {
+              positive: {
+                $map: {
+                  input: "$positive",
+                  as: "pos",
+                  in: "$$pos.word",
+                },
+              },
+              negative: {
+                $map: {
+                  input: "$negative",
+                  as: "neg",
+                  in: "$$neg.word",
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              user: 0,
+            },
+          },
+          {
+            $sort: {
+              created_at: -1,
+            },
+          },
+        ])
+        .toArray()
+    )?.[0];
 
-    const negative = db.queryObject(
-      "SELECT word FROM negative WHERE search_id = ?",
-      job_id
-    );
-
-    data.positive = positive.map((w: any) => w.word);
-    data.negative = negative.map((w: any) => w.word);
     context.response.body = data;
   }
 
   async update(context: AuthorisedContext) {
-    const db = context.state.db;
+    const mongo = context.state.mongo;
     const id = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const { positive, negative, title, type, contact, pay, description } = body;
     const data: any = {};
     const job_id = context.params.id;
 
-    // insert name of search
-    db.queryObject(
-      "UPDATE jobs SET title = ?, type = ?, contact = ?, pay = ?, description = ?, updated_at = ? WHERE id = ?",
-      title,
-      type,
-      contact,
-      pay,
-      description,
-      new Date().toISOString(),
-      job_id
+    await mongo.collection("jobs").updateOne(
+      { id: job_id },
+      {
+        $set: {
+          title,
+          type,
+          contact,
+          pay,
+          description,
+          updated_at: new Date().toISOString(),
+        },
+      }
     );
 
-    // add positive keywords
-    db.queryObject("DELETE from positive WHERE search_id = ?", job_id);
+    await mongo.collection("positive").deleteMany({ search_id: job_id });
 
     for (let word of positive) {
-      db.queryObject(
-        "INSERT INTO positive (id, search_id, word) VALUES (?, ?, ?)",
-        crypto.randomUUID(),
-        job_id,
-        word.trim().toLowerCase()
-      );
+      const positiveData: PositiveModel = {
+        id: crypto.randomUUID(),
+        search_id: job_id,
+        word: word.trim().toLowerCase(),
+      };
+      await mongo.collection("positive").insertOne(positiveData);
     }
 
     // add negative keywords
-    db.queryObject("DELETE from negative WHERE search_id = ?", job_id);
+    await mongo.collection("negative").deleteMany({ search_id: job_id });
 
     for (let word of negative) {
-      db.queryObject(
-        "INSERT INTO negative (id, search_id, word) VALUES (?, ?, ?)",
-        crypto.randomUUID(),
-        job_id,
-        word.trim().toLowerCase()
-      );
+      const negativeData: NegativeModel = {
+        id: crypto.randomUUID(),
+        search_id: job_id,
+        word: word.trim().toLowerCase(),
+      };
+      await mongo.collection("negative").insertOne(negativeData);
     }
 
     data.positive = positive;
