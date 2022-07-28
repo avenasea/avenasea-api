@@ -1,4 +1,4 @@
-export const getLastSunday = (d) => {
+export const getLastSunday = (d: Date) => {
   const t = new Date(d);
 
   t.setDate(t.getDate() - (t.getDay() || 7));
