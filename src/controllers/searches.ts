@@ -177,6 +177,11 @@ class Controller {
       .collection("search_history")
       .aggregate<SearchHistoryModel & { username: string; word: string }>([
         {
+          $match: {
+            created_at: { $gt: prevSunday.toISOString() },
+          },
+        },
+        {
           $lookup: {
             from: "users",
             localField: "user_id",
@@ -228,7 +233,6 @@ class Controller {
         {
           $match: {
             word: tag,
-            created_at: { $gt: prevSunday.toISOString() },
           },
         },
         {

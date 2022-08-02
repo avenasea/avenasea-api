@@ -120,6 +120,13 @@ class Controller {
             localField: "search_id",
             foreignField: "search_id",
             as: "history",
+            pipeline: [
+              {
+                $match: {
+                  created_at: { $gt: prevSunday.toISOString() },
+                },
+              },
+            ],
           },
         },
         {
@@ -128,17 +135,14 @@ class Controller {
           },
         },
         {
-          $group: {
-            _id: "$word",
-            count: {
-              $count: {},
-            },
+          $addFields: {
+            count: { $size: "$history" },
           },
         },
         {
           $project: {
             _id: 0,
-            word: "$_id",
+            word: 1,
             count: 1,
           },
         },
