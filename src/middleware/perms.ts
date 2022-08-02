@@ -1,15 +1,16 @@
-import { config, DB, Mongo } from "../deps.ts";
-import Users from "../models/users.ts";
+import { config, Mongo } from "../deps.ts";
+import { Users } from "../models/mongo/users.ts";
+import { SearchModel } from "../models/mongo/searches.ts";
 
 const ENV = config();
 
-const db = new DB("database.sqlite");
+//const db = new DB("database.sqlite");
 const client = new Mongo.MongoClient();
 const mongo = await client.connect(ENV.MONGO_CONNECTION_STRING);
 
 export const checkPerms = async (userID: string, type: string) => {
-  const users = new Users(db, mongo);
-  const user: any = await users.find(userID);
+  const users = new Users(mongo);
+  const user = await users.find(userID);
   if (!user) return false;
 
   // check trial
@@ -26,14 +27,13 @@ export const checkPerms = async (userID: string, type: string) => {
 
   if (maxProfiles == -1) return true;
 
-  const all = await db.queryEntries(
-    "SELECT * FROM searches WHERE user_id = ?",
-    [userID]
-  );
+  const currentCount = await mongo
+    .collection("searches")
+    .countDocuments({ user_id: userID, type });
+  console.log({ currentCount });
 
-  db.close();
+  //db.close();
   client.close();
-  const currentCount = all.filter((job) => job.type == type).length;
 
   if (currentCount + 1 > maxProfiles) return false;
 };

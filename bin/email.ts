@@ -1,16 +1,22 @@
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 import { pooledMap } from "https://deno.land/std/async/mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
-import { config, DB } from "../src/deps.ts";
+import { config, Mongo } from "../src/deps.ts";
 import cities from "./cities.js";
 import { ats } from "../ats.ts";
-import {
-  QueryParameter,
-  RowObject,
-} from "https://deno.land/x/sqlite@v3.2.1/src/query.ts";
+import { SearchHistoryModel } from "../src/models/mongo/search_history.ts";
+import { UserModel } from "../src/models/mongo/users.ts";
+import { SearchModel } from "../src/models/mongo/searches.ts";
+import { PositiveModel } from "../src/models/mongo/positive.ts";
+import { NegativeModel } from "../src/models/mongo/negative.ts";
 
 const ENV = config();
 const args = parse(Deno.args);
+
+const mongo: Mongo.Database = await new Mongo.MongoClient().connect(
+  ENV.MONGO_CONNECTION_STRING
+);
+
 const UAs = [
   "Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0",
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
@@ -23,8 +29,6 @@ const UAs = [
   "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0",
 ];
 const sites = ats;
-
-const db = new DB("database.sqlite");
 
 interface WhateverResult {
   title: string;
@@ -41,7 +45,7 @@ interface CraigsResult {
   htm: string;
 }
 
-async function getSerps(q: string): Promise<any> {
+async function getSerps(q: string, search: any, user: any): Promise<any> {
   let txt: string = "";
   let htm: string = "";
   let data: any = {};
@@ -96,8 +100,10 @@ ${host}
 ==========================`;
   }
 
-  data.organic_results?.map((item: any) => {
+  for (const item of data.organic_results) {
     const { title, link, snippet } = item;
+    insertSearch(title, link, search, user);
+
     txt += `
 ${title}
 	${link}
@@ -107,14 +113,18 @@ ${title}
     htm += `
 	<li><a href="${link}" target="_new">${title}</a><p>${snippet}</p></li>
 `;
-  });
+  }
 
   htm += "</ol>";
 
   return { txt, htm };
 }
 
-async function getCraigslist(q: string): Promise<CraigsResult> {
+async function getCraigslist(
+  q: string,
+  search: any,
+  user: any
+): Promise<CraigsResult> {
   let txt = "";
   let htm = "";
   const remote = true;
@@ -127,7 +137,7 @@ async function getCraigslist(q: string): Promise<CraigsResult> {
       remote ? "is_telecommuting=1" : ""
     }&employment_type=2&employment_type=3`;
   });
-  const pool: any = pooledMap(100, requests, (url) => {
+  const pool: any = pooledMap(20, requests, (url) => {
     try {
       return getWithFetch(url).catch(console.error);
     } catch (err) {
@@ -193,6 +203,15 @@ async function getCraigslist(q: string): Promise<CraigsResult> {
 
   for (const result of results) {
     if (!result) continue;
+    // todo insert into search_history here
+    const { title, urls } = result;
+
+    if (title.length && urls.length) {
+      for (const url of urls) {
+        insertSearch(title, url, search, user);
+      }
+    }
+
     console.log("htm: ", htm);
     htm += `
 			<h4 title="${q}">${result?.title}</h4>
@@ -275,6 +294,19 @@ async function getWithFetch(url: string, retry = 1): Promise<FetchResult> {
   return { body, url };
 }
 
+function insertSearch(title: string, url: string, search: any, user: any) {
+  console.log("inserting search: ", url);
+  const data: SearchHistoryModel = {
+    id: crypto.randomUUID(),
+    user_id: user.id,
+    search_id: search.id,
+    title: title.trim(),
+    url: url.trim(),
+    created_at: new Date().toISOString(),
+  };
+  mongo.collection("search_history").insertOne(data);
+}
+
 async function sendEmail(
   email: string,
   name: string,
@@ -311,14 +343,15 @@ async function sendEmail(
   }
 }
 
-let users = [];
+let users: UserModel[] = [];
 
 if (args.email) {
-  users = await db.queryEntries("SELECT * FROM users WHERE email = ?", [
-    args.email,
-  ]);
+  users = await mongo
+    .collection<UserModel>("users")
+    .find({ email: args.email })
+    .toArray();
 } else {
-  users = await db.queryEntries("SELECT * FROM users");
+  users = await mongo.collection<UserModel>("users").find().toArray();
 }
 
 console.log(users);
@@ -328,23 +361,24 @@ for (const user of users) {
 
   if (args.email && user.email !== args.email) continue;
 
-  const searches = await db.queryEntries(
-    "SELECT * from searches WHERE user_id = ? AND type = 'job'",
-    [user.id as QueryParameter]
-  );
+  const searches = await mongo
+    .collection<SearchModel>("searches")
+    .find({ user_id: user.id, type: "job" })
+    .toArray();
 
-  for (const search of searches as RowObject[]) {
+  for (const search of searches) {
     let text: string = "";
     let html: string = "";
 
-    const positive = await db.queryEntries(
-      "SELECT * from positive WHERE search_id = ?",
-      [search.id as QueryParameter]
-    );
-    const negative = await db.queryEntries(
-      "SELECT * from negative WHERE search_id = ?",
-      [search.id as QueryParameter]
-    );
+    const positive = await mongo
+      .collection<PositiveModel>("positive")
+      .find({ search_id: search.id })
+      .toArray();
+
+    const negative = await mongo
+      .collection<NegativeModel>("negative")
+      .find({ search_id: search.id })
+      .toArray();
 
     for (const site of sites) {
       const neg = negative.map((n) => " -" + n.word).join("");
@@ -353,7 +387,7 @@ for (const user of users) {
       if (!pos.length) continue;
 
       const q = `${site}${neg}${pos}`.trim();
-      const { txt, htm } = await getSerps(q);
+      const { txt, htm } = await getSerps(q, search, user);
       if (!htm || !txt) continue;
       console.log(user.email, search.name, q);
 
@@ -368,7 +402,7 @@ for (const user of users) {
       // todo: remove me
       //const q = `${neg}${pos}`.trim();
       const q = `${pos}`.trim();
-      const { txt, htm } = await getCraigslist(q);
+      const { txt, htm } = await getCraigslist(q, search, user);
       console.log("craigslist found: ", txt);
 
       text += txt;

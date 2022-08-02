@@ -1,4 +1,4 @@
-import { DB, MongoDatabase } from '../deps.ts';
+import { DB, MongoDatabase } from "../deps.ts";
 
 interface UpdateOrInsertParams {
   userID: string;
@@ -11,33 +11,36 @@ interface UpdateOrInsertParams {
 }
 
 class Billing {
-	db: DB;
-	mongo: MongoDatabase;
+  db: DB;
+  mongo: MongoDatabase;
 
-	constructor(db:any, mongo:any) {
-		this.db = db;
-		this.mongo = mongo;
-	}
-
-  async find(userID: string) {
-    const query = this.db.prepareQuery<any[]>(`
-      SELECT
-      *
-      FROM billing WHERE user_id = :userID`);
-
-    return await query.oneEntry({ userID });
+  constructor(db: any, mongo: any) {
+    this.db = db;
+    this.mongo = mongo;
   }
 
-  async findAll() {
-    const query = this.db.prepareQuery<any[]>(`
+  find(userID: string) {
+    const query = this.db.queryObject<any>(
+      `
+      SELECT
+      *
+      FROM billing WHERE user_id = :userID`,
+      { userID }
+    )[0];
+
+    return query;
+  }
+
+  findAll() {
+    const query = this.db.queryObject<any>(`
       SELECT
       *
       FROM billing`);
 
-    return await query.allEntries();
+    return query;
   }
 
-  async insert(
+  insert(
     userID: string,
     status: string,
     stripeSubscriptionID: string,
@@ -45,7 +48,7 @@ class Billing {
     paymentType: string,
     planID: string
   ) {
-    const query = this.db.query<any[]>(
+    const query = this.db.queryArray<any[]>(
       `
         INSERT INTO billing (
           user_id,
@@ -55,13 +58,18 @@ class Billing {
           payment_type,
           plan_id
         ) VALUES (?,?,?,?,?,?)`,
-      [userID, status, stripeSubscriptionID, renewalDate, paymentType, planID]
+      userID,
+      status,
+      stripeSubscriptionID,
+      renewalDate,
+      paymentType,
+      planID
     );
 
-    return await query;
+    return query;
   }
 
-  async updateOrInsert({
+  updateOrInsert({
     userID,
     status,
     stripeSubscriptionID,
@@ -70,16 +78,16 @@ class Billing {
     planID,
     cancelAtPeriodEnd,
   }: UpdateOrInsertParams) {
-    const query1 = await this.db.query<any[]>(
+    const query1 = this.db.queryArray<any[]>(
       `
       SELECT
       *
       FROM billing WHERE user_id = ?`,
-      [userID]
+      userID
     );
     if (query1.length > 0) {
       console.log("updating");
-      return await this.db.query<any[]>(
+      return this.db.queryArray<any[]>(
         `
         UPDATE billing
         SET
@@ -90,18 +98,16 @@ class Billing {
           plan_id = ?,
           cancel_at_period_end = ?
         WHERE user_id = ?`,
-        [
-          status,
-          stripeSubscriptionID,
-          renewalDate,
-          paymentType,
-          planID,
-          cancelAtPeriodEnd,
-          userID,
-        ]
+        status,
+        stripeSubscriptionID,
+        renewalDate,
+        paymentType,
+        planID,
+        cancelAtPeriodEnd,
+        userID
       );
     } else {
-      return await this.db.query<any[]>(
+      return this.db.queryArray<any[]>(
         `
         INSERT INTO billing (
           user_id,
@@ -112,15 +118,13 @@ class Billing {
           plan_id,
           cancel_at_period_end
         ) VALUES (?,?,?,?,?,?,?)`,
-        [
-          userID,
-          status,
-          stripeSubscriptionID,
-          renewalDate,
-          paymentType,
-          planID,
-          cancelAtPeriodEnd,
-        ]
+        userID,
+        status,
+        stripeSubscriptionID,
+        renewalDate,
+        paymentType,
+        planID,
+        cancelAtPeriodEnd
       );
     }
   }
