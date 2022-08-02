@@ -1,4 +1,4 @@
-import { Application, config, oakCors, Mongo, DB } from "./src/deps.ts";
+import { Application, config, oakCors, Mongo } from "./src/deps.ts";
 import searches from "./src/routes/searches.ts";
 import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
@@ -9,8 +9,6 @@ import jobs from "./src/routes/jobs.ts";
 import payments from "./src/routes/payments.ts";
 //import affiliates from "./src/routes/affiliates.ts";
 
-const client = new Mongo.MongoClient();
-
 config({ export: true });
 //console.log(config());
 const env = Deno.env.toObject();
@@ -18,12 +16,11 @@ const port = parseInt(env.PORT);
 const app = new Application();
 
 //Db
-const db = new DB("database.sqlite");
-await client.connect(env.MONGO_CONNECTION_STRING);
-const mongoDB: Mongo.Database = client.database(env.MONGO_DB_NAME);
+const mongoDB: Mongo.Database = await new Mongo.MongoClient().connect(
+  env.MONGO_CONNECTION_STRING
+);
 
 app.use(async (ctx, next) => {
-  ctx.state.db = db;
   ctx.state.mongo = mongoDB;
   await next();
 });
