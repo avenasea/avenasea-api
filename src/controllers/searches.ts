@@ -4,7 +4,7 @@ import { SearchModel } from "../models/mongo/searches.ts";
 import { PositiveModel } from "../models/mongo/positive.ts";
 import { NegativeModel } from "../models/mongo/negative.ts";
 import { SearchHistoryModel } from "../models/mongo/search_history.ts";
-import { getLastSunday } from "../utils/dates.ts";
+import { getLastSunday, getOneWeekAgo } from "../utils/dates.ts";
 
 class Controller {
   async post(context: AuthorisedContext) {
@@ -169,7 +169,7 @@ class Controller {
     const { mongo } = context.state;
     const tag = context.params.tag.replace(/-+/g, " ");
     const today = new Date();
-    const prevSunday = getLastSunday(today);
+    const prevSunday = getOneWeekAgo(today);
 
     console.log("today: ", today, "prev sunday: ", prevSunday);
 
@@ -585,7 +585,7 @@ class Controller {
   async getAllHistory(context: AuthorisedContext) {
     const { mongo } = context.state;
     const today = new Date();
-    const prevSunday = getLastSunday(today);
+    const prevSunday = getOneWeekAgo(today);
 
     console.log("today: ", today, "prev sunday: ", prevSunday);
 

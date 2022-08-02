@@ -5,3 +5,11 @@ export const getLastSunday = (d: Date) => {
 
   return t;
 };
+
+export const getOneWeekAgo = (d: Date) => {
+  const t = new Date(d);
+
+  t.setDate(t.getDate() - 7);
+
+  return t;
+}

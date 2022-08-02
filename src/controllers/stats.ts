@@ -1,5 +1,5 @@
 import type { StandardContext } from "../types/context.ts";
-import { getLastSunday } from "../utils/dates.ts";
+import { getLastSunday, getOneWeekAgo } from "../utils/dates.ts";
 
 class Controller {
   async stats(context: StandardContext) {
@@ -108,7 +108,7 @@ class Controller {
   async historyTags(context: StandardContext) {
     const mongo = context.state.mongo;
     const today = new Date();
-    const prevSunday = getLastSunday(today);
+    const prevSunday = getOneWeekAgo(today);
     console.log("today: ", today, "prev sunday: ", prevSunday);
 
     const tags = await mongo
