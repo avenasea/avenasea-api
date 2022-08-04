@@ -126,6 +126,11 @@ class Controller {
                   created_at: { $gt: prevSunday.toISOString() },
                 },
               },
+              {
+                $group: {
+                  _id: "$url",
+                },
+              },
             ],
           },
         },
@@ -135,15 +140,28 @@ class Controller {
           },
         },
         {
-          $addFields: {
-            count: { $size: "$history" },
+          $group: {
+            _id: "$word",
+            url: {
+              $addToSet: "$history._id",
+            },
           },
         },
         {
           $project: {
             _id: 0,
-            word: 1,
-            count: 1,
+            word: "$_id",
+            count: {
+              $size: {
+                $reduce: {
+                  input: "$url",
+                  initialValue: [],
+                  in: {
+                    $concatArrays: ["$$value", "$$this"],
+                  },
+                },
+              },
+            },
           },
         },
         {
