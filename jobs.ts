@@ -35,7 +35,7 @@ async function getSerps(q: string): Promise<any> {
   let txt: string = "";
   let htm: string = "";
   const res = await fetch(
-    `https://api.scaleserp.com/search?api_key=74BEEFF70A2645618A2BB3845408B96A&q=${q}&gl=us&hl=en&time_period=last_week&num=20`,
+    `https://api.scaleserp.com/search?api_key=74BEEFF70A2645618A2BB3845408B96A&q=${q}&gl=us&hl=en&time_period=last_week&num=100`,
   );
   const data = await res.json();
 
