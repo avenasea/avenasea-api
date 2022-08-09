@@ -9,6 +9,19 @@ class Controller {
 
     try {
       const schema = JSON.parse(await Deno.readTextFile("./newSchema.json"));
+      const parties = await mongo
+        .collection<{ userID: string; creator: boolean }>("users")
+        .find(
+          { email: { $in: body.parties } },
+          {
+            projection: {
+              _id: 0,
+              userID: "$id",
+              creator: { $toBool: false },
+            },
+          }
+        )
+        .toArray();
 
       const id = getRandomId();
       const item = new Contract(
@@ -20,6 +33,7 @@ class Controller {
             userID: context.state.user.id,
             creator: true,
           },
+          ...parties,
         ],
         schema,
         {},
