@@ -26,6 +26,11 @@ export class Contract {
     public parties: {
       userID: UUID;
       creator: boolean;
+      fieldsApproved?: {
+        [key: FieldKey]: {
+          choice: "approved" | "rejected";
+        };
+      };
     }[],
     public JSONschema: Record<any, any>,
     public currentData: Record<FieldKey, any>,
