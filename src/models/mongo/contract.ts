@@ -1,30 +1,37 @@
-import { Mongo } from "../../deps.ts";
+import type { UUID } from "../../utils/randomId.ts";
 
-type DbID = string;
 type FieldKey = string;
 
-export default class Contract {
+export interface Comment {
+  id: UUID;
+  parentID: UUID | null;
+  text: string;
+  timestamp: Date;
+  userID: UUID;
+  field: FieldKey;
+}
+
+export interface ChangeHistory {
+  timestamp: Date;
+  userID: UUID;
+  changedFrom: string;
+  changedTo: string;
+}
+
+export class Contract {
   constructor(
+    public id: UUID,
     public name: string,
     public createdAt: Date,
     public parties: {
-      userID: DbID;
+      userID: UUID;
       creator: boolean;
     }[],
     public JSONschema: Record<any, any>,
     public currentData: Record<FieldKey, any>,
     public changeHistory: {
-      [key: FieldKey]: Array<{
-        timestamp: Date;
-        userID: DbID;
-        changedFrom: string;
-        changedTo: string;
-      }>;
+      [key: FieldKey]: ChangeHistory[];
     },
-    public comments?: Record<
-      FieldKey,
-      { text: string; timestamp: Date; userID: string }[]
-    >,
-    public id?: Mongo.ObjectId
+    public comments: Comment[] | []
   ) {}
 }
