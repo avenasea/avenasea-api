@@ -13,5 +13,15 @@ router.post(
   validateJWT,
   controller.updateField.bind(controller)
 );
+router.post(
+  "/:contractID/comments",
+  validateJWT,
+  controller.createComment.bind(controller)
+);
+router.post(
+  "/:contractID/approve-field",
+  validateJWT,
+  controller.approveField.bind(controller)
+);
 
 export default router;
