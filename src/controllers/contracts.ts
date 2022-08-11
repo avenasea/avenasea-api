@@ -9,6 +9,19 @@ class Controller {
 
     try {
       const schema = JSON.parse(await Deno.readTextFile("./newSchema.json"));
+      const parties = await mongo
+        .collection<{ userID: string; creator: boolean }>("users")
+        .find(
+          { email: { $in: body.parties } },
+          {
+            projection: {
+              _id: 0,
+              userID: "$id",
+              creator: { $toBool: false },
+            },
+          }
+        )
+        .toArray();
 
       const id = getRandomId();
       const item = new Contract(
@@ -20,6 +33,7 @@ class Controller {
             userID: context.state.user.id,
             creator: true,
           },
+          ...parties,
         ],
         schema,
         {},
@@ -196,6 +210,29 @@ class Controller {
     }
     context.response.status = 201;
     context.response.body = comment;
+  }
+
+  async approveField(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
+    const contractID = context.params.contractID;
+    const body = JSON.parse(await context.request.body().value);
+
+    await mongo.collection("contracts").updateOne(
+      {
+        id: contractID,
+        "parties.userID": context.state.user.id,
+      },
+      {
+        $set: {
+          [`parties.$.fieldsApproved.${body.fieldName}`]: {
+            choice: body.choice,
+          },
+        },
+      }
+    );
+
+    context.response.status = 200;
+    context.response.body = { userID: context.state.user.id };
   }
 }
 
