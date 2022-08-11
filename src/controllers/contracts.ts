@@ -211,6 +211,7 @@ class Controller {
     context.response.status = 201;
     context.response.body = comment;
   }
+
   async approveField(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
