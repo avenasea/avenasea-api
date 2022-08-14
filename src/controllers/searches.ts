@@ -80,8 +80,67 @@ class Controller {
     const type = context.request.url.searchParams.get("type") || "job";
 
     const all = await mongo
-      .collection<SearchModel>("searches")
-      .find({ user_id: id, type })
+      .collection<SearchModel & { positive: string[]; negative: string[] }>(
+        "searches"
+      )
+      .aggregate([
+        {
+          $match: {
+            user_id: id,
+            type,
+          },
+        },
+        {
+          $lookup: {
+            from: "positive",
+            localField: "id",
+            foreignField: "search_id",
+            as: "positive",
+            pipeline: [
+              {
+                $project: {
+                  _id: 0,
+                  word: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "negative",
+            localField: "id",
+            foreignField: "search_id",
+            as: "negative",
+            pipeline: [
+              {
+                $project: {
+                  _id: 0,
+                  word: 1,
+                },
+              },
+            ],
+          },
+        },
+        {
+          $set: {
+            positive: {
+              $map: {
+                input: "$positive",
+                as: "pos",
+                in: "$$pos.word",
+              },
+            },
+            negative: {
+              $map: {
+                input: "$negative",
+                as: "neg",
+                in: "$$neg.word",
+              },
+            },
+          },
+        },
+      ])
       .toArray();
 
     context.response.body = all;
