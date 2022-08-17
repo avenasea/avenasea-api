@@ -18,25 +18,29 @@ export interface ChangeHistory {
   changedTo: string;
 }
 
+export interface ContractField {
+  fieldName: FieldKey;
+  schemaData: Record<any, any>;
+  currentValue: string | Date | number | null;
+  changeHistory: ChangeHistory[] | [];
+  comments: Comment[] | [];
+  approvalStatus:
+    | {
+        userID: UUID;
+        choice: "approved" | "rejected";
+      }
+    | Record<string, unknown>;
+}
+
 export class Contract {
   constructor(
     public id: UUID,
     public name: string,
-    public createdAt: Date,
+    public created_at: Date,
     public parties: {
       userID: UUID;
       creator: boolean;
-      fieldsApproved?: {
-        [key: FieldKey]: {
-          choice: "approved" | "rejected";
-        };
-      };
     }[],
-    public JSONschema: Record<any, any>,
-    public currentData: Record<FieldKey, any>,
-    public changeHistory: {
-      [key: FieldKey]: ChangeHistory[];
-    },
-    public comments: Comment[] | []
+    public fields: ContractField[]
   ) {}
 }

@@ -1,4 +1,9 @@
-import { Contract, Comment, ChangeHistory } from "../models/mongo/contract.ts";
+import {
+  Contract,
+  Comment,
+  ChangeHistory,
+  ContractField,
+} from "../models/mongo/contract.ts";
 import type { AuthorisedContext } from "../types/context.ts";
 import { getRandomId } from "../utils/randomId.ts";
 
@@ -9,6 +14,18 @@ class Controller {
 
     try {
       const schema = JSON.parse(await Deno.readTextFile("./newSchema.json"));
+      const fields: ContractField[] = Object.entries(schema.properties).map(
+        ([key, val]: [string, any]) => {
+          return {
+            fieldName: key,
+            schemaData: val,
+            currentValue: null,
+            changeHistory: [],
+            comments: [],
+            approvalStatus: {},
+          };
+        }
+      );
       const parties = await mongo
         .collection<{ userID: string; creator: boolean }>("users")
         .find(
@@ -35,10 +52,7 @@ class Controller {
           },
           ...parties,
         ],
-        schema,
-        {},
-        {},
-        []
+        fields
       );
 
       await mongo.collection("contracts").insertOne(item);
