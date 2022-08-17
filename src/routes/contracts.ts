@@ -7,7 +7,16 @@ const router = new Router({
 });
 
 router.post("/", validateJWT, controller.create.bind(controller));
-router.get("/:contractID", validateJWT, controller.getById.bind(controller));
+router.get(
+  "/:contractID",
+  validateJWT,
+  controller.getContractById.bind(controller)
+);
+router.get(
+  "/:contractID/fields/:fieldName",
+  validateJWT,
+  controller.getFieldByName.bind(controller)
+);
 router.post(
   "/:contractID/update-field",
   validateJWT,

@@ -1,4 +1,9 @@
-import { Contract, Comment, ChangeHistory } from "../models/mongo/contract.ts";
+import {
+  Contract,
+  Comment,
+  ChangeHistory,
+  ContractField,
+} from "../models/mongo/contract.ts";
 import type { AuthorisedContext } from "../types/context.ts";
 import { getRandomId } from "../utils/randomId.ts";
 
@@ -9,6 +14,18 @@ class Controller {
 
     try {
       const schema = JSON.parse(await Deno.readTextFile("./newSchema.json"));
+      const fields: ContractField[] = Object.entries(schema.properties).map(
+        ([key, val]: [string, any]) => {
+          return {
+            fieldName: key,
+            schemaData: val,
+            currentValue: null,
+            changeHistory: [],
+            comments: [],
+            approvalStatus: {},
+          };
+        }
+      );
       const parties = await mongo
         .collection<{ userID: string; creator: boolean }>("users")
         .find(
@@ -35,10 +52,7 @@ class Controller {
           },
           ...parties,
         ],
-        schema,
-        {},
-        {},
-        []
+        fields
       );
 
       await mongo.collection("contracts").insertOne(item);
@@ -54,75 +68,33 @@ class Controller {
       };
     }
   }
-  async getById(context: AuthorisedContext) {
+  async getContractById(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
 
-    const contract = (
-      await mongo
-        .collection("contracts")
-        .aggregate<Contract>([
-          {
-            $match: {
-              id: contractID,
-            },
+    const contract = await mongo
+      .collection<
+        Pick<Contract, "id" | "name" | "created_at" | "parties"> & {
+          fields: {
+            fieldName: ContractField["fieldName"];
+            schemaData: { module: string };
+          }[];
+        }
+      >("contracts")
+      .findOne(
+        { id: contractID },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            name: 1,
+            created_at: 1,
+            parties: 1,
+            "fields.fieldName": 1,
+            "fields.schemaData.module": 1,
           },
-          {
-            $unwind: "$parties",
-          },
-          {
-            $lookup: {
-              from: "users",
-              let: {
-                userID: "$parties.userID",
-                parties: "$parties",
-              },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $eq: ["$id", "$$userID"],
-                    },
-                  },
-                },
-                {
-                  $project: {
-                    userID: 1,
-                    creator: 1,
-                    username: 1,
-                  },
-                },
-                {
-                  $replaceRoot: {
-                    newRoot: {
-                      $mergeObjects: ["$$parties", "$$ROOT"],
-                    },
-                  },
-                },
-              ],
-              as: "parties",
-            },
-          },
-          {
-            $group: {
-              _id: "$id",
-              data: { $first: "$$ROOT" },
-              parties: {
-                $push: {
-                  $first: "$parties",
-                },
-              },
-            },
-          },
-          {
-            $replaceRoot: {
-              newRoot: { $mergeObjects: ["$data", { parties: "$parties" }] },
-            },
-          },
-        ])
-        .toArray()
-    )?.[0];
-
+        }
+      );
     if (!contract) {
       context.response.status = 404;
       context.response.body = {
@@ -130,10 +102,56 @@ class Controller {
       };
       return;
     }
+    const userIds = contract.parties.map((u) => u.userID);
+    const users = await mongo
+      .collection("users")
+      .find(
+        { id: { $in: userIds } },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            username: 1,
+          },
+        }
+      )
+      .toArray();
+    contract.parties = contract.parties.map((p) => {
+      return {
+        ...p,
+        username: users.find((u) => p.userID == u.id)?.username,
+      };
+    });
 
     context.response.status = 200;
     context.response.body = contract;
   }
+  async getFieldByName(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
+    const { contractID, fieldName } = context.params;
+
+    let field = await mongo.collection("contracts").findOne(
+      { id: contractID, "fields.fieldName": fieldName },
+      {
+        projection: {
+          _id: 0,
+          "fields.$": 1,
+        },
+      }
+    );
+
+    if (!field || !field.fields[0]) {
+      context.response.status = 404;
+      context.response.body = {
+        message: "fields not found",
+      };
+      return;
+    }
+
+    context.response.status = 200;
+    context.response.body = field = field.fields[0];
+  }
+
   async updateField(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
@@ -141,21 +159,22 @@ class Controller {
 
     // TODO: authorization
 
-    const contract = await mongo.collection("contracts").findOne(
-      {
-        id: contractID,
-      },
-      {
-        projection: {
-          [`currentData.${body.fieldName}`]: 1,
-        },
-      }
-    );
+    const currentValue = (
+      await mongo.collection("contracts").findOne(
+        { id: contractID, "fields.fieldName": body.fieldName },
+        {
+          projection: {
+            _id: 0,
+            "fields.currentValue.$": 1,
+          },
+        }
+      )
+    )?.fields?.[0]?.currentValue;
 
-    if (typeof contract == "undefined") {
+    if (typeof currentValue == "undefined") {
       context.response.status = 404;
       context.response.body = {
-        message: "contract not founds",
+        message: "field not found",
       };
       return;
     }
@@ -163,18 +182,19 @@ class Controller {
     const changeData: ChangeHistory = {
       timestamp: new Date(),
       userID: context.state.user.id,
-      changedFrom: contract.currentData[body.fieldName],
+      changedFrom: currentValue,
       changedTo: body.value,
     };
 
     await mongo.collection("contracts").updateOne(
-      { id: contractID },
+      { id: contractID, "fields.fieldName": body.fieldName },
       {
         $set: {
-          [`currentData.${body.fieldName}`]: body.value,
+          "fields.$.currentValue": body.value,
+          "fields.$.approvalStatus": {},
         },
         $push: {
-          [`changeHistory.${body.fieldName}`]: { $each: [changeData] },
+          "fields.$.changeHistory": { $each: [changeData] },
         },
       }
     );
@@ -194,11 +214,12 @@ class Controller {
       userID: context.state.user.id,
       field: body.fieldName,
     };
+
     const update = await mongo.collection("contracts").updateOne(
-      { id: contractID },
+      { id: contractID, "fields.fieldName": body.fieldName },
       {
         $push: {
-          comments: { $each: [comment] },
+          "fields.$.comments": { $each: [comment] },
         },
       }
     );
@@ -218,13 +239,10 @@ class Controller {
     const body = JSON.parse(await context.request.body().value);
 
     await mongo.collection("contracts").updateOne(
-      {
-        id: contractID,
-        "parties.userID": context.state.user.id,
-      },
+      { id: contractID, "fields.fieldName": body.fieldName },
       {
         $set: {
-          [`parties.$.fieldsApproved.${body.fieldName}`]: {
+          [`fields.$.approvalStatus.${context.state.user.id}`]: {
             choice: body.choice,
           },
         },
