@@ -3,7 +3,7 @@ import type {
   RouterContext,
   Context,
 } from "https://deno.land/x/oak@v10.4.0/mod.ts";
-import { Application, Router } from "https://deno.land/x/oak@v10.4.0/mod.ts";
+import * as Oak from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import {
   verify,
   create,
@@ -18,6 +18,8 @@ import { hmac } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
 import { Database as MongoDatabase } from "https://deno.land/x/mongo@v0.30.0/mod.ts";
 import * as Mongo from "https://deno.land/x/mongo@v0.30.0/mod.ts";
 
+const { Application, Router } = Oak;
+
 export {
   Application,
   verify,
@@ -31,6 +33,7 @@ export {
   hmac,
   Mongo,
   MongoDatabase,
+  Oak,
 };
 
 export type { Payload, RouterContext, Context };
