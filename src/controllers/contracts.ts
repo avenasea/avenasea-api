@@ -61,16 +61,13 @@ class Controller {
         id,
       };
     } catch {
-      // TODO: error handler fn
-      context.response.status = 500;
-      context.response.body = {
-        message: "internal server error",
-      };
+      return context.state.sendError(500);
     }
   }
   async getContractById(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
+    const userID = context.state.user.id;
 
     const contract = await mongo
       .collection<
@@ -102,6 +99,11 @@ class Controller {
       };
       return;
     }
+
+    // Check user is party to contract
+    if (contract.parties.findIndex((p) => p.userID == userID) == -1)
+      return context.state.sendError(401);
+
     const userIds = contract.parties.map((u) => u.userID);
     const users = await mongo
       .collection("users")
@@ -128,56 +130,64 @@ class Controller {
   }
   async getFieldByName(context: AuthorisedContext) {
     const mongo = context.state.mongo;
+    const userID = context.state.user.id;
     const { contractID, fieldName } = context.params;
 
-    let field = await mongo.collection("contracts").findOne(
-      { id: contractID, "fields.fieldName": fieldName },
-      {
-        projection: {
-          _id: 0,
-          "fields.$": 1,
+    const contract = await mongo
+      .collection<Pick<Contract, "parties" | "fields">>("contracts")
+      .findOne(
+        {
+          id: contractID,
+          "fields.fieldName": fieldName,
         },
-      }
-    );
+        {
+          projection: {
+            _id: 0,
+            "fields.$": 1,
+            parties: 1,
+          },
+        }
+      );
 
-    if (!field || !field.fields[0]) {
-      context.response.status = 404;
-      context.response.body = {
-        message: "fields not found",
-      };
-      return;
-    }
+    if (!contract || !contract.fields[0])
+      return context.state.sendError(404, "field not found");
+
+    if (contract.parties.findIndex((p) => p.userID == userID) == -1)
+      return context.state.sendError(401);
 
     context.response.status = 200;
-    context.response.body = field = field.fields[0];
+    context.response.body = contract.fields[0];
   }
 
   async updateField(context: AuthorisedContext) {
     const mongo = context.state.mongo;
+    const userID = context.state.user.id;
     const contractID = context.params.contractID;
     const body = JSON.parse(await context.request.body().value);
 
-    // TODO: authorization
-
-    const currentValue = (
-      await mongo.collection("contracts").findOne(
+    const contract = await mongo
+      .collection<
+        Pick<Contract, "parties"> & {
+          fields: [{ currentValue: ContractField["currentValue"] }];
+        }
+      >("contracts")
+      .findOne(
         { id: contractID, "fields.fieldName": body.fieldName },
         {
           projection: {
             _id: 0,
             "fields.currentValue.$": 1,
+            parties: 1,
           },
         }
-      )
-    )?.fields?.[0]?.currentValue;
+      );
 
-    if (typeof currentValue == "undefined") {
-      context.response.status = 404;
-      context.response.body = {
-        message: "field not found",
-      };
-      return;
-    }
+    const currentValue = contract?.fields?.[0]?.currentValue;
+    if (typeof currentValue == "undefined")
+      return context.state.sendError(404, "field not found");
+
+    if (contract?.parties.findIndex((p) => p.userID == userID) == -1)
+      return context.state.sendError(401);
 
     const changeData: ChangeHistory = {
       timestamp: new Date(),
@@ -205,6 +215,7 @@ class Controller {
   async createComment(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
+    const userID = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
     const comment: Comment = {
       id: getRandomId(),
@@ -216,19 +227,20 @@ class Controller {
     };
 
     const update = await mongo.collection("contracts").updateOne(
-      { id: contractID, "fields.fieldName": body.fieldName },
+      {
+        id: contractID,
+        "fields.fieldName": body.fieldName,
+        "parties.userID": userID,
+      },
       {
         $push: {
           "fields.$.comments": { $each: [comment] },
         },
       }
     );
-    if (update.modifiedCount != 1) {
-      context.response.body = {
-        error: "error creating comment",
-      };
-      return (context.response.status = 500);
-    }
+    if (update.modifiedCount != 1)
+      return context.state.sendError(500, "error creating comment");
+
     context.response.status = 201;
     context.response.body = comment;
   }
@@ -236,10 +248,15 @@ class Controller {
   async approveField(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const contractID = context.params.contractID;
+    const userID = context.state.user.id;
     const body = JSON.parse(await context.request.body().value);
 
-    await mongo.collection("contracts").updateOne(
-      { id: contractID, "fields.fieldName": body.fieldName },
+    const update = await mongo.collection("contracts").updateOne(
+      {
+        id: contractID,
+        "fields.fieldName": body.fieldName,
+        "parties.userID": userID,
+      },
       {
         $set: {
           [`fields.$.approvalStatus.${context.state.user.id}`]: {
@@ -248,6 +265,9 @@ class Controller {
         },
       }
     );
+
+    if (update.modifiedCount != 1)
+      return context.state.sendError(500, "error approving field");
 
     context.response.status = 200;
     context.response.body = { userID: context.state.user.id };
