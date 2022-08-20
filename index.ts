@@ -4,7 +4,7 @@ import users from "./src/routes/users.ts";
 import index from "./src/routes/index.ts";
 import stats from "./src/routes/stats.ts";
 import jobs from "./src/routes/jobs.ts";
-// import formatError from "./src/utils/formatError.ts";
+import sendError from "./src/middleware/sendError.ts";
 
 import payments from "./src/routes/payments.ts";
 //import affiliates from "./src/routes/affiliates.ts";
@@ -40,6 +40,7 @@ app.use(async (ctx, next) => {
   ctx.response.headers.set("X-Response-Time", `${ms}ms`);
 });
 
+app.use(sendError());
 app.use(oakCors());
 app.use(searches.routes());
 app.use(searches.allowedMethods());
