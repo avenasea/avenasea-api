@@ -24,4 +24,5 @@ export const ats = [
   "inurl:jobs.gohire.io/",
   "inurl:join.com/jobs/",
 	"inurl:jobs.ashbyhq.com",
+	"inurl:/careers",
 ];

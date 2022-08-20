@@ -145,11 +145,8 @@ class Controller {
     const body = JSON.parse(await context.request.body().value);
     let user;
 
-    if (!body.email || !body.password) {
-      context.response.status = 400;
-      context.response.body = { message: "User not found" };
-      return;
-    }
+    if (!body.email || !body.password)
+      return context.state.sendError(400, "User not found");
 
     try {
       user = (
@@ -207,15 +204,11 @@ class Controller {
       )?.[0];
     } catch (err) {
       console.error(err);
-      context.response.status = 400;
-      context.response.body = { message: "User not found" };
-      return;
+      return context.state.sendError(400, "User not found");
     }
 
     if (!user?.email || !user?.hashed_password) {
-      context.response.status = 400;
-      context.response.body = { message: "User not found" };
-      return;
+      return context.state.sendError(400, "User not found");
     }
 
     console.log("user login: ", user.email);
@@ -247,8 +240,7 @@ class Controller {
         user.hashed_password,
         comparison
       );
-      context.response.status = 400;
-      context.response.body = { message: "Incorrect login" };
+      return context.state.sendError(400, "User not found");
     }
   }
 
