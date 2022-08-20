@@ -1,6 +1,7 @@
 import type { UUID } from "../../utils/randomId.ts";
 
 type FieldKey = string;
+type FieldValue = string | Date | number | null;
 
 export interface Comment {
   id: UUID;
@@ -14,14 +15,14 @@ export interface Comment {
 export interface ChangeHistory {
   timestamp: Date;
   userID: UUID;
-  changedFrom: string;
-  changedTo: string;
+  changedFrom: FieldValue;
+  changedTo: FieldValue;
 }
 
 export interface ContractField {
   fieldName: FieldKey;
   schemaData: Record<any, any>;
-  currentValue: string | Date | number | null;
+  currentValue: FieldValue;
   changeHistory: ChangeHistory[] | [];
   comments: Comment[] | [];
   approvalStatus:
