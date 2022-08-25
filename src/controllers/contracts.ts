@@ -8,6 +8,30 @@ import type { AuthorisedContext } from "../types/context.ts";
 import { getRandomId } from "../utils/randomId.ts";
 
 class Controller {
+  async getMyContracts(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
+    const userID = context.state.user.id;
+
+    const contract = await mongo
+      .collection<Pick<Contract, "id" | "name" | "created_at">>("contracts")
+      .find(
+        {
+          "parties.userID": userID,
+        },
+        {
+          projection: {
+            _id: 0,
+            id: 1,
+            name: 1,
+            created_at: 1,
+          },
+        }
+      )
+      .toArray();
+
+    context.response.status = 200;
+    context.response.body = contract;
+  }
   async create(context: AuthorisedContext) {
     const mongo = context.state.mongo;
     const body = JSON.parse(await context.request.body().value);

@@ -6,6 +6,7 @@ const router = new Router({
   prefix: "/api/1/contracts",
 });
 
+router.get("/", validateJWT, controller.getMyContracts.bind(controller));
 router.post("/", validateJWT, controller.create.bind(controller));
 router.get(
   "/:contractID",
