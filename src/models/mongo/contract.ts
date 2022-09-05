@@ -26,11 +26,8 @@ export interface ContractField {
   changeHistory: ChangeHistory[] | [];
   comments: Comment[] | [];
   approvalStatus:
-    | {
-        userID: UUID;
-        choice: "approved" | "rejected";
-      }
-    | Record<string, unknown>;
+    | Record<UUID, { choice: "approved" | "rejected" }>
+    | Record<string, never>;
 }
 
 export class Contract {

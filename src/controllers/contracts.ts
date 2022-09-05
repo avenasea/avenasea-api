@@ -279,7 +279,7 @@ class Controller {
       {
         id: contractID,
         "fields.fieldName": body.fieldName,
-        "parties.userID": userID,
+        parties: { $elemMatch: { userID } },
       },
       {
         $set: {
@@ -290,11 +290,16 @@ class Controller {
       }
     );
 
-    if (update.modifiedCount != 1)
+    if (update.matchedCount != 1)
       return context.state.sendError(500, "error approving field");
 
+    if (update.modifiedCount != 1) {
+      context.response.status = 304;
+      return;
+    }
+
     context.response.status = 200;
-    context.response.body = { userID: context.state.user.id };
+    context.response.body = { message: "success" };
   }
 }
 
