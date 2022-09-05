@@ -99,6 +99,8 @@ class Controller {
           fields: {
             fieldName: ContractField["fieldName"];
             schemaData: { module: string };
+            approvalStatus: ContractField["approvalStatus"];
+            currentValue: ContractField["currentValue"];
           }[];
         }
       >("contracts")
@@ -113,6 +115,8 @@ class Controller {
             parties: 1,
             "fields.fieldName": 1,
             "fields.schemaData.module": 1,
+            "fields.approvalStatus": 1,
+            "fields.currentValue": 1,
           },
         }
       );
@@ -220,12 +224,18 @@ class Controller {
       changedTo: body.value,
     };
 
+    const approvalStatus: ContractField["approvalStatus"] = {
+      [userID]: {
+        choice: "approved",
+      },
+    };
+
     await mongo.collection("contracts").updateOne(
       { id: contractID, "fields.fieldName": body.fieldName },
       {
         $set: {
           "fields.$.currentValue": body.value,
-          "fields.$.approvalStatus": {},
+          "fields.$.approvalStatus": approvalStatus,
         },
         $push: {
           "fields.$.changeHistory": { $each: [changeData] },
@@ -234,7 +244,7 @@ class Controller {
     );
 
     context.response.status = 200;
-    context.response.body = changeData;
+    context.response.body = { changeData, approvalStatus };
   }
   async createComment(context: AuthorisedContext) {
     const mongo = context.state.mongo;
