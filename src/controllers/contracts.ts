@@ -1,3 +1,4 @@
+import type { Mongo } from "../deps.ts";
 import {
   Contract,
   Comment,
@@ -6,6 +7,33 @@ import {
 } from "../models/mongo/contract.ts";
 import type { AuthorisedContext } from "../types/context.ts";
 import { getRandomId } from "../utils/randomId.ts";
+
+const addUsernamesToParties = async (
+  mongo: Mongo.Database,
+  parties: Contract["parties"]
+) => {
+  const userIds = parties.map((u) => u.userID);
+  const users = await mongo
+    .collection("users")
+    .find(
+      { id: { $in: userIds } },
+      {
+        projection: {
+          _id: 0,
+          id: 1,
+          username: 1,
+        },
+      }
+    )
+    .toArray();
+  const partiesWithUsernames = parties.map((p) => {
+    return {
+      ...p,
+      username: users.find((u) => p.userID == u.id)?.username,
+    };
+  });
+  return partiesWithUsernames;
+};
 
 class Controller {
   async getMyContracts(context: AuthorisedContext) {
@@ -132,26 +160,7 @@ class Controller {
     if (contract.parties.findIndex((p) => p.userID == userID) == -1)
       return context.state.sendError(401);
 
-    const userIds = contract.parties.map((u) => u.userID);
-    const users = await mongo
-      .collection("users")
-      .find(
-        { id: { $in: userIds } },
-        {
-          projection: {
-            _id: 0,
-            id: 1,
-            username: 1,
-          },
-        }
-      )
-      .toArray();
-    contract.parties = contract.parties.map((p) => {
-      return {
-        ...p,
-        username: users.find((u) => p.userID == u.id)?.username,
-      };
-    });
+    contract.parties = await addUsernamesToParties(mongo, contract.parties);
 
     context.response.status = 200;
     context.response.body = contract;
@@ -310,6 +319,60 @@ class Controller {
 
     context.response.status = 200;
     context.response.body = { message: "success" };
+  }
+
+  async addParty(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
+    const contractID = context.params.contractID;
+    const userID = context.state.user.id;
+    const body = JSON.parse(await context.request.body().value);
+
+    if (!body.email) return context.state.sendError(400, "email is required");
+
+    // find user from email
+    const user = await mongo
+      .collection("users")
+      .findOne({ email: body.email }, { projection: { _id: 0, id: 1 } });
+
+    // TODO: email invite to user
+    if (!user) return context.state.sendError(404, "user not found");
+
+    const update = await mongo.collection("contracts").updateOne(
+      {
+        id: contractID,
+        parties: {
+          $elemMatch: {
+            userID: {
+              $ne: user.id,
+              $eq: userID,
+            },
+          },
+        },
+      },
+      {
+        $addToSet: {
+          parties: {
+            userID: user.id,
+            creator: false,
+          },
+        },
+      }
+    );
+
+    if (update.matchedCount != 1)
+      return context.state.sendError(500, "error adding party");
+
+    // get parties from contract in db
+    const contract = await mongo
+      .collection("contracts")
+      .findOne({ id: contractID }, { projection: { _id: 0, parties: 1 } });
+
+    if (!contract) return context.state.sendError(500, "error adding party");
+
+    const parties = await addUsernamesToParties(mongo, contract.parties);
+
+    context.response.status = 200;
+    context.response.body = parties;
   }
 }
 

@@ -33,5 +33,10 @@ router.post(
   validateJWT,
   controller.approveField.bind(controller)
 );
+router.post(
+  "/:contractID/add-party",
+  validateJWT,
+  controller.addParty.bind(controller)
+);
 
 export default router;
