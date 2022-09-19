@@ -229,9 +229,12 @@ class Controller {
           { $set: { updated_at: users.getCurrentTime() } }
         );
 
+      context.cookies.set("token", token, {
+        httpOnly: true,
+        // TODO: figure out expiry
+      });
       return (context.response.body = {
         user,
-        token,
       });
     } else {
       console.error(
@@ -242,6 +245,12 @@ class Controller {
       );
       return context.state.sendError(400, "User not found");
     }
+  }
+
+  logout(context: StandardContext) {
+    context.cookies.delete("token");
+    context.response.status = 200;
+    context.response.body = { message: "Logged out" };
   }
 
   async getMe(context: AuthorisedContext) {

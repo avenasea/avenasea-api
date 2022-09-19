@@ -18,8 +18,6 @@ router
   .post("/password/request-reset", controller.requestReset.bind(controller))
   .put("/password/reset", controller.passwordReset.bind(controller))
   .post("/newsletters", controller.newsletter.bind(controller))
-  .delete(
-    "/newsletters/:id",
-    controller.unsubscribeNewsletter.bind(controller)
-  );
+  .delete("/newsletters/:id", controller.unsubscribeNewsletter.bind(controller))
+  .get("/logout", controller.logout.bind(controller));
 export default router;
