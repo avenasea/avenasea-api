@@ -75,6 +75,7 @@ class Controller {
             changeHistory: [],
             comments: [],
             approvalStatus: {},
+            hidden: false,
           };
         }
       );
@@ -145,6 +146,7 @@ class Controller {
             "fields.schemaData.module": 1,
             "fields.approvalStatus": 1,
             "fields.currentValue": 1,
+            "fields.hidden": 1,
           },
         }
       );
@@ -373,6 +375,33 @@ class Controller {
 
     context.response.status = 200;
     context.response.body = parties;
+  }
+
+  async hideOrUnhideField(context: AuthorisedContext) {
+    const mongo = context.state.mongo;
+    const contractID = context.params.contractID;
+    const fieldName = context.params.fieldName;
+    const userID = context.state.user.id;
+    const type = context.params.type;
+
+    const update = await mongo.collection("contracts").updateOne(
+      {
+        id: contractID,
+        "fields.fieldName": fieldName,
+        parties: { $elemMatch: { userID } },
+      },
+      {
+        $set: {
+          "fields.$.hidden": type == "hide" ? true : false,
+        },
+      }
+    );
+
+    if (update.matchedCount != 1)
+      return context.state.sendError(500, "error hiding field");
+
+    context.response.status = 200;
+    context.response.body = { message: "success" };
   }
 }
 

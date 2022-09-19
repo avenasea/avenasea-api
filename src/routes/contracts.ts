@@ -19,6 +19,11 @@ router.get(
   controller.getFieldByName.bind(controller)
 );
 router.post(
+  "/:contractID/fields/:fieldName/hidden/:type",
+  validateJWT,
+  controller.hideOrUnhideField.bind(controller)
+);
+router.post(
   "/:contractID/update-field",
   validateJWT,
   controller.updateField.bind(controller)

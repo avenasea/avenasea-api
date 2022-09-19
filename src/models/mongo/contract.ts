@@ -25,6 +25,7 @@ export interface ContractField {
   currentValue: FieldValue;
   changeHistory: ChangeHistory[] | [];
   comments: Comment[] | [];
+  hidden: boolean;
   approvalStatus:
     | Record<UUID, { choice: "approved" | "rejected" }>
     | Record<string, never>;
