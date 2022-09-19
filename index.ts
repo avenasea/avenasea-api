@@ -42,7 +42,12 @@ app.use(async (ctx, next) => {
 });
 
 app.use(sendError());
-app.use(oakCors());
+app.use(
+  oakCors({
+    origin: true, // TODO: secure for production
+    credentials: true,
+  })
+);
 app.use(searches.routes());
 app.use(searches.allowedMethods());
 app.use(jobs.routes());

@@ -16,17 +16,10 @@ export const JwtConfig = {
 };
 
 export const validateJWTOptionally = async (
-  { request, response, state }: StandardContext,
+  { request, response, state, cookies }: StandardContext,
   next: VoidFunction
 ) => {
-  const auth = request.headers.get("Authorization");
-  if (!auth) return await next();
-  const matches = /Bearer\s*(.*)/.exec(auth);
-  let jwt;
-
-  if (matches && matches.length > 1) {
-    jwt = matches[1];
-  }
+  const jwt = await cookies.get("token");
 
   try {
     if (!jwt) {
@@ -52,17 +45,10 @@ export const validateJWTOptionally = async (
 };
 
 export const validateJWT = async (
-  { request, response, state }: StandardContext,
+  { request, response, state, cookies }: StandardContext,
   next: VoidFunction
 ) => {
-  const auth = request.headers.get("Authorization");
-  if (!auth) return;
-  const matches = /Bearer\s*(.*)/.exec(auth);
-  let jwt;
-
-  if (matches && matches.length > 1) {
-    jwt = matches[1];
-  }
+  const jwt = await cookies.get("token");
 
   try {
     if (!jwt) {
